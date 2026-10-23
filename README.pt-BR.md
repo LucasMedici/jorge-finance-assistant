@@ -11,7 +11,7 @@
   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
   ![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
 
-  [Visão geral](#visão-geral) · [Por que o Jorge?](#por-que-o-jorge) · [Funcionalidades](#funcionalidades) · [Arquitetura](#arquitetura) · [Como rodar](#como-rodar) · [API](#api)
+  [Visão geral](#visão-geral) · [Funcionalidades](#funcionalidades) · [Arquitetura](#arquitetura) · [Como rodar](#como-rodar) · [API](#api)
 
   [English](./README.md) · **Português**
 </div>
@@ -34,20 +34,6 @@ Este repositório contém o produto inteiro:
 | --- | --- | --- | --- |
 | [`mobile/`](./mobile) | App Android | Expo · React Native · TypeScript | EAS Build (APK) |
 | [`backend/`](./backend) | API REST | Node.js · Express · Prisma · PostgreSQL · OpenAI | Railway |
-
-## Por que o Jorge?
-
-A maioria dos apps de finanças obriga você a abrir um formulário, escolher uma categoria e digitar um valor — para
-cada cafezinho. É justamente esse atrito que faz a gente desistir de anotar os gastos depois de duas semanas. Eu
-queria algo mais parecido com o jeito que eu já falo sobre dinheiro: mandar uma mensagem, como se fosse para um
-amigo, e deixar o app fazer o resto.
-
-O Jorge segue três regras:
-
-- **Escrever é a interface.** Uma frase por lançamento. Sem formulários, sem menus.
-- **Barato de manter.** Uma única chamada curta ao `gpt-4o-mini` por mensagem — autenticação, armazenamento e
-  relatórios não usam IA.
-- **Simples de propósito.** Ele registra o que entrou e o que saiu, por categoria. Não é uma ferramenta de orçamento.
 
 ## Telas
 

@@ -11,7 +11,7 @@
   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
   ![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
 
-  [Overview](#overview) · [Why Jorge?](#why-jorge) · [Features](#features) · [Architecture](#architecture) · [Getting started](#getting-started) · [API](#api)
+  [Overview](#overview) · [Features](#features) · [Architecture](#architecture) · [Getting started](#getting-started) · [API](#api)
 
   **English** · [Português](./README.pt-BR.md)
 </div>
@@ -34,18 +34,6 @@ This repository contains the whole product:
 | --- | --- | --- | --- |
 | [`mobile/`](./mobile) | Android app | Expo · React Native · TypeScript | EAS Build (APK) |
 | [`backend/`](./backend) | REST API | Node.js · Express · Prisma · PostgreSQL · OpenAI | Railway |
-
-## Why Jorge?
-
-Most finance apps make you open a form, pick a category and type a value — for every single coffee. That friction
-is exactly why people stop tracking their money after a couple of weeks. I wanted something closer to how I
-already talk about money: send a message, the way you'd text a friend, and let the app do the rest.
-
-Jorge is built around three rules:
-
-- **Writing is the interface.** One sentence per entry. No forms, no menus.
-- **Cheap to run.** A single, short `gpt-4o-mini` call per message — auth, storage and reports don't use AI at all.
-- **Simple on purpose.** It tracks what came in and what went out, by category. It is not a budgeting suite.
 
 ## Screenshots
 
