@@ -1,45 +1,276 @@
 <div align="center">
-  <img width="150" height="150" alt="Jorge acenando" src="./mobile/src/assets/jorge_acenando.png" />
+  <img width="160" height="160" alt="Jorge waving" src="./mobile/src/assets/jorge_acenando.png" />
 
-  # Jorge — assistente financeiro
+  # Jorge — Finance Assistant
 
-  Registre gastos e receitas em linguagem natural e acompanhe seus relatórios por categoria.
+  **Your personal finance assistant: just tell Jorge what you spent.**
+
+  ![Expo](https://img.shields.io/badge/Expo_SDK_54-000020?logo=expo&logoColor=white)
+  ![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?logo=react&logoColor=black)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+  ![Express](https://img.shields.io/badge/Express_5-000000?logo=express&logoColor=white)
+  ![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
+  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+  ![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
+  ![License](https://img.shields.io/badge/license-MIT-green)
+
+  [Overview](#-overview) · [Features](#-features) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api) · [Deployment](#-deployment) · [PT-BR](#-resumo-em-português)
 </div>
 
-> "gastei 50 reais no mercado" → **gasto · R$ 50,00 · mercado**
+---
 
-| Login | Chat | Relatórios |
-| --- | --- | --- |
-| ![Login](./mobile/doc-images/jorge_login.PNG) | ![Chat](./mobile/doc-images/jorge_chat.PNG) | ![Relatórios](./mobile/doc-images/jorge_reports.PNG) |
+## 🚀 Overview
 
-## Estrutura
+Jorge is a mobile app with an AI-powered chat for tracking personal finances. Instead of filling in forms, you write
+what happened in plain Portuguese — Jorge understands it, stores it as a transaction and turns it into reports.
 
-| Pasta | O que é | Stack | Deploy |
+```
+You:    "gastei 50 reais no mercado"
+Jorge:  ✅  gasto · R$ 50,00 · mercado
+```
+
+This repository contains the whole product:
+
+| Folder | What it is | Stack | Deployed on |
 | --- | --- | --- | --- |
-| [`backend/`](./backend) | API | Node.js, Express 5, TypeScript, Prisma, PostgreSQL (Supabase), OpenAI, JWT, Swagger | Railway |
-| [`mobile/`](./mobile) | App Android | Expo SDK 54, React Native, TypeScript, React Navigation | EAS (APK) |
+| [`mobile/`](./mobile) | Android app | Expo · React Native · TypeScript | EAS Build (APK) |
+| [`backend/`](./backend) | REST API | Node.js · Express · Prisma · PostgreSQL · OpenAI | Railway |
 
-## Rodando localmente
+**Built to be cheap to run:** each message costs a single, short `gpt-4o-mini` call — everything else (auth,
+storage, reports) runs without AI.
+
+## 🖼 Screenshots
+
+| Login | Chat | Reports |
+| :---: | :---: | :---: |
+| <img src="./mobile/doc-images/jorge_login.PNG" width="230" alt="Login screen" /> | <img src="./mobile/doc-images/jorge_chat.PNG" width="230" alt="Chat screen" /> | <img src="./mobile/doc-images/jorge_reports.PNG" width="230" alt="Reports screen" /> |
+
+## 🔑 Features
+
+### 📱 Mobile app
+
+- **Account & session** — sign up with email, password and phone; email/password login; the JWT is kept in
+  AsyncStorage so you stay logged in, and every request is sent with `Authorization: Bearer <token>`.
+- **Chat with Jorge** 💬 — WhatsApp-style conversation with user/bot bubbles, and an animated Jorge that "thinks"
+  and "counts" while your message is processed.
+- **Offline queue** 📶 — connectivity is watched with NetInfo; messages written offline are stored locally and sent
+  automatically when the connection comes back.
+- **Reports** 📊 — total for the period, bar chart by category and the latest entries, with a date range filter
+  (default: first day of the month → today).
+- **Profile** 👤 — view your email, edit your display name and log out.
+
+### ⚡ API
+
+- **Natural language → transaction** 🤖 — the message is sent to OpenAI with a strict extraction prompt that returns
+  `valor` (amount), `tipo` (`gasto` / `receita` / `outro`), `categoria` and `comentario`, which is saved as a transaction.
+- **Cost guards** — messages are limited to 150 characters, with low temperature and a small `max_tokens`.
+- **Authentication** 🔑 — signup and login with bcrypt-hashed passwords and JWT; protected routes go through an auth middleware.
+- **Transactions by period** — the user's transactions filtered by date, newest first.
+- **Interactive docs** 📄 — Swagger / OpenAPI at `/api-docs`.
+
+## 🏗 Architecture
+
+```mermaid
+flowchart LR
+    APP["📱 Mobile app<br/>Expo / React Native"]
+    API["⚡ API<br/>Express + Prisma"]
+    AI["🤖 OpenAI<br/>gpt-4o-mini"]
+    DB[("🐘 PostgreSQL<br/>Supabase")]
+
+    APP -- "HTTPS + JWT" --> API
+    API -- "1 short prompt per message" --> AI
+    API -- "users & transactions" --> DB
+```
+
+What happens when you send a message:
+
+1. The app posts the text to `POST /webhook/messages` (or keeps it in the offline queue if there's no connection).
+2. The API validates the token and the message size, then asks OpenAI to extract amount, type and category.
+3. The result is saved as a `transaction` and returned to the app.
+4. The Reports screen reads `GET /transactions` for the selected period and groups the values by category.
+
+### Data model
+
+| `user` | `transaction` |
+| --- | --- |
+| `id` (uuid) | `id` (uuid) |
+| `email` (unique) | `phone` — owner of the transaction |
+| `password` (bcrypt hash) | `type` — `gasto` · `receita` · `outro` |
+| `phone` (unique) | `amount` |
+| `name` (optional) | `category`, `description` |
+| `createdAt` | `messageId`, `createdAt` |
+
+Both tables live in the `assistent` schema; transactions belong to a user through the `phone` field.
+
+## 🗂 Project structure
+
+```
+.
+├── backend/
+│   ├── prisma/
+│   │   ├── schema.prisma       🔹 data model
+│   │   └── migrations/         🔹 SQL migrations
+│   ├── src/
+│   │   ├── routes/             🔹 Express routes + OpenAPI annotations
+│   │   ├── services/           🔹 business logic (chat/OpenAI, auth, users, transactions)
+│   │   ├── middlewares/        🔹 JWT auth
+│   │   ├── lib/prisma.ts       🔹 Prisma client
+│   │   ├── swagger.ts          🔹 Swagger / OpenAPI setup
+│   │   └── index.ts            🔹 app entry point
+│   └── Procfile                🔹 Railway start command
+│
+└── mobile/
+    ├── App.tsx                 🔹 providers + navigation
+    ├── app.config.ts           🔹 Expo config (reads API_URL)
+    ├── eas.json                🔹 build profiles
+    └── src/
+        ├── pages/              🔹 login, register, home (chat), reports, profile
+        ├── routes/             🔹 stack + bottom tabs
+        ├── context/            🔹 auth and connectivity
+        ├── services/api.ts     🔹 axios instance with the auth interceptor
+        ├── global/             🔹 theme, fonts, token helpers, offline queue
+        └── assets/             🔹 Jorge illustrations and app icons
+```
+
+## ⚡ Getting started
+
+### Prerequisites
+
+- **Node.js 18+**, **Yarn** (backend) and **npm** (mobile)
+- A **PostgreSQL** database (a free Supabase project works) and an **OpenAI API key**
+- **Expo Go** on your phone, or an Android emulator
+- **EAS CLI** (`npm i -g eas-cli`) only if you want to build the APK
+
+### 1. API
+
+```bash
+cd backend
+cp .env.example .env            # fill in the variables below
+yarn install
+npx prisma generate             # generates the Prisma client in src/generated/prisma
+npx prisma migrate deploy       # creates the tables
+yarn dev                        # http://localhost:3065 — docs at http://localhost:3065/api-docs
+```
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | HTTP port (example: `3065`) |
+| `DATABASE_URL` | PostgreSQL connection string used by the app (pooled, on Supabase) |
+| `DATABASE_DIRECT_URL` | Direct connection string, used by migrations |
+| `OPENAI_API_KEY` | OpenAI key |
+| `JWT_SECRET` | Secret used to sign tokens |
+| `JWT_EXPIRES_IN` | Token lifetime, e.g. `7d` |
+| `PRISMA_DISABLE_PREPARED_STATEMENTS` | `true` when using a connection pooler (Supabase) |
+
+### 2. Mobile app
+
+```bash
+cd mobile
+cp .env.example .env            # API_URL=http://<your-api>
+npm install
+npm start                       # scan the QR code with Expo Go, or press "a" for Android
+```
+
+> **Tip:** `localhost` only works on the computer itself. On a physical phone, point `API_URL` to your machine's
+> IP on the local network (e.g. `http://192.168.0.10:3065`); on the Android emulator, use `http://10.0.2.2:3065`.
+
+## 📨 API
+
+All routes except `/auth/*` and `/serverstatus` require `Authorization: Bearer <token>`.
+
+| Method | Route | Description |
+| --- | --- | --- |
+| `POST` | `/auth/signup` | Create an account — `{ email, password, phone }` |
+| `POST` | `/auth/login` | Log in — `{ email, password }` → `{ token }` |
+| `POST` | `/webhook/messages` | Send a message to Jorge and store the transaction |
+| `GET` | `/transactions?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` | Transactions in the period |
+| `GET` | `/user/:id` | Get a user profile |
+| `PUT` | `/user/:id` | Update the display name — `{ name }` |
+| `GET` | `/serverstatus` | Health check (returns `on`) |
+
+**Example — sending a message**
+
+```http
+POST /webhook/messages
+Authorization: Bearer eyJhbGciOi...
+Content-Type: application/json
+
+{
+  "userMessage": {
+    "id": "1730000000000",
+    "text": "gastei 50 reais no mercado",
+    "userPhone": "5511999999999"
+  }
+}
+```
+
+```json
+{
+  "valor": 50,
+  "tipo": "gasto",
+  "categoria": "mercado",
+  "comentario": ""
+}
+```
+
+The full, interactive documentation is served by Swagger at **`/api-docs`**:
+
+<img width="800" alt="Jorge API — Swagger / OpenAPI docs" src="https://github.com/user-attachments/assets/e1d84014-baf4-4331-9f50-07ad4a392c70" />
+
+Prefer Insomnia? Import the ready-made collection: [Insomnia-RequestsFile.yaml](https://github.com/user-attachments/files/24020089/Insomnia-RequestsFile.yaml).
+
+## ☁️ Deployment
+
+### API → Railway
+
+- Service connected to this repository with **Root Directory `/backend`** (watch path `/backend/**`, so app-only
+  changes don't redeploy the API).
+- Build: `yarn build` (`prisma generate` + `tsc`) · Start: `Procfile` → `node dist/index.js`.
+- Environment variables are the same as in `.env.example`.
+- Migrations don't run automatically: apply them with `npx prisma migrate deploy` when the schema changes.
+
+### Mobile → EAS Build
+
+```bash
+cd mobile
+eas build -p android --profile preview      # generates an installable APK
+```
+
+The production `API_URL` is defined in the `env` of each profile in `mobile/eas.json`.
+
+## 🗺 Roadmap
+
+Version **2.0** is in progress: security and bug fixes, a refreshed interface and new features — see the
+[open issues](../../issues).
+
+## 📄 License
+
+[MIT](./LICENSE) © Lucas Medici
+
+---
+
+## 🇧🇷 Resumo em português
+
+**Jorge** é um assistente financeiro pessoal: você conta no chat o que gastou ou recebeu ("gastei 50 reais no
+mercado"), a IA extrai valor, tipo e categoria, e o app transforma isso em relatórios.
+
+- **App (`mobile/`)** — Expo + React Native: cadastro e login com JWT, chat com o Jorge 💬, fila offline com
+  reenvio automático 📶, relatórios por categoria com filtro de datas 📊 e perfil.
+- **API (`backend/`)** — Express + Prisma + PostgreSQL: autenticação, interpretação das mensagens com
+  `gpt-4o-mini` (uma chamada curta por mensagem, para manter o custo baixo), transações por período e documentação
+  Swagger em `/api-docs`.
+
+**Rodando localmente**
 
 ```bash
 # API
-cd backend
-cp .env.example .env          # preencha DATABASE_URL, OPENAI_API_KEY, JWT_SECRET...
-yarn install && npx prisma generate
-yarn dev                      # http://localhost:3065 — docs em /api-docs
+cd backend && cp .env.example .env    # preencha as variáveis
+yarn install && npx prisma generate && npx prisma migrate deploy && yarn dev
 
 # App (em outro terminal)
-cd mobile
-cp .env.example .env          # API_URL apontando para a API (em celular físico, use o IP da máquina)
-npm install
-npm start
+cd mobile && cp .env.example .env     # API_URL — em celular físico use o IP da máquina na rede
+npm install && npm start
 ```
 
-## Histórico
-
-Este repositório une os antigos [`finance-assistent-backend`](https://github.com/LucasMedici/finance-assistent-backend)
-e [`finance-assistent-frontend`](https://github.com/LucasMedici/finance-assistent-frontend), com o histórico de commits preservado.
-
-## Licença
-
-[MIT](./LICENSE)
+**Deploy:** API na Railway (Root Directory `/backend`) e app Android gerado como APK pelo EAS
+(`eas build -p android --profile preview`).
