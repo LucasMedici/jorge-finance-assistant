@@ -21,21 +21,22 @@ const router = Router();
  *             type: object
  *             required:
  *               - userMessage
- *               - userPhone
- *               - id
  *             properties:
- *               id:
- *                 type: string
- *                 example: "msg-12345"
- *               userPhone:
- *                 type: string
- *                 example: "+5511999999999"
  *               userMessage:
  *                 type: object
+ *                 required:
+ *                   - text
  *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "1730000000000"
  *                   text:
  *                     type: string
  *                     example: "gastei 50 reais em comida"
+ *                   userPhone:
+ *                     type: string
+ *                     deprecated: true
+ *                     description: Ignorado — a transação é sempre gravada no telefone do usuário do token.
  *     responses:
  *       200:
  *         description: Mensagem processada com sucesso
@@ -81,7 +82,7 @@ router.post('/messages', async (req: Request, res: Response) => {
     try {
       await prisma.transaction.create({
         data: {
-          phone: ClientMessage.userMessage.userPhone,
+          phone: req.user.phone,
           type: messageProcessed.tipo,
           amount: messageProcessed.valor,
           category: messageProcessed.categoria,

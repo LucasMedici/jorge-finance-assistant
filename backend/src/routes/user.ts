@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createUser, findUserById, updateUserName } from '../services/userService';
-import { signLoginToken, verifyPassword, hashPassword } from '../services/authService';
+import { findUserById, updateUserName } from '../services/userService';
 
 
 const router = Router();
@@ -34,10 +33,16 @@ const router = Router();
  *         description: Usuário atualizado com sucesso
  *       400:
  *         description: Erro na requisição
+ *       403:
+ *         description: O id não é o do usuário autenticado
  */
 router.put('/:id', async (req, res) => {
     const id = req.params.id;
     const { name } = req.body;
+
+    if (id !== req.user.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
 
     try {
         const updatedUser = await updateUserName(id, { name });
@@ -66,11 +71,17 @@ router.put('/:id', async (req, res) => {
  *         description: Sucesso
  *       400:
  *         description: Requisição inválida
+ *       403:
+ *         description: O id não é o do usuário autenticado
  *       404:
  *         description: Usuário não encontrado
  */
 router.get('/:id', async (req, res) => {
     const id = req.params.id;
+
+    if (id !== req.user.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
 
     try{
         const user = await findUserById(id);
