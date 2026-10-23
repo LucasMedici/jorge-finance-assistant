@@ -48,6 +48,9 @@ Ao mudar o contrato, altere `backend/` e `mobile/` juntos, de preferência no me
 - **Não incluir atribuição ao Claude** em commits nem PRs: nada de `Co-Authored-By: Claude ...`,
   "Generated with Claude Code" ou similares.
 - Nunca commitar `.env`.
+- **Conta do GitHub:** este repo é pessoal (`LucasMedici`), mas a conta ativa do `gh` na máquina é a do trabalho.
+  O git local já está configurado (user + credential helper locais) para usar `LucasMedici`. Para o `gh`, sempre
+  prefixe: `GH_TOKEN=$(gh auth token -u LucasMedici) gh ...`. Nunca troque a conta ativa nem altere o git global.
 - Histórico anterior ao monorepo foi importado com `git subtree`: `git blame` mostra os commits originais,
   mas para `git log` de um arquivo antigo use o caminho sem o prefixo (ex.: `git log -- src/index.ts`
   em vez de `backend/src/index.ts`). Repositórios originais: `LucasMedici/finance-assistent-backend` e
