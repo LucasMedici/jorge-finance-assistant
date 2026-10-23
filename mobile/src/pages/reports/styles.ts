@@ -61,7 +61,6 @@ export const style = StyleSheet.create({
   summaryContainer: {
     flexDirection: 'row',
     paddingHorizontal: 15,
-    paddingVertical: 15,
     gap: 10,
   },
 
@@ -86,6 +85,15 @@ export const style = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 16,
     color: themas.colors.secondary,
+  },
+
+  summaryCardNegative: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderLeftColor: 'rgba(255, 255, 255, 0.4)',
+  },
+
+  summaryAmountNegative: {
+    color: '#FFFFFF',
   },
 
   chartContainer: {
@@ -139,6 +147,10 @@ export const style = StyleSheet.create({
   },
 
   lastEntryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 8,
     paddingVertical: 10,
@@ -148,10 +160,51 @@ export const style = StyleSheet.create({
     borderLeftColor: themas.colors.secondary,
   },
 
+  lastEntryItemExpense: {
+    borderLeftColor: 'rgba(255, 255, 255, 0.4)',
+  },
+
+  lastEntryItemOther: {
+    borderLeftColor: 'rgba(255, 255, 255, 0.15)',
+  },
+
+  lastEntryInfo: {
+    flex: 1,
+  },
+
   lastEntryText: {
     fontFamily: fonts.regular,
     fontSize: 12,
     color: '#FFFFFF',
+  },
+
+  lastEntryDate: {
+    fontFamily: fonts.regular,
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginTop: 2,
+  },
+
+  lastEntryAmount: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+
+  lastEntryAmountIncome: {
+    color: themas.colors.secondary,
+  },
+
+  lastEntryAmountOther: {
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+
+  lastEntryEmpty: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
+    paddingVertical: 10,
   },
 
   legendContainer: {

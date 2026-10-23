@@ -17,6 +17,23 @@ import { style } from "./styles";
 import { themas } from "../../global/themes";
 import { api } from "../../services/api";
 
+type TransactionType = "gasto" | "receita" | "outro";
+
+// Normaliza o tipo vindo da API (string livre gerada pela IA)
+const getEntryType = (entry: any): TransactionType => {
+  const type = String(entry?.type ?? "").trim().toLowerCase();
+  if (type === "gasto" || type === "receita") return type;
+  return "outro";
+};
+
+const getEntryAmount = (entry: any): number => Number(entry?.amount) || 0;
+
+const formatCurrency = (value: number) =>
+  value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Data local em YYYY-MM-DD (toISOString usa UTC e pula um dia à noite no Brasil)
+const toApiDate = (date: Date) => format(date, "yyyy-MM-dd");
+
 export default function ReportsPage({ navigation }: any) {
   const screenWidth = Dimensions.get("window").width;
 
@@ -36,8 +53,8 @@ export default function ReportsPage({ navigation }: any) {
       setIsLoading(true);
 
       const payload = {
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
+        startDate: toApiDate(startDate),
+        endDate: toApiDate(endDate),
       };
 
 
@@ -74,13 +91,18 @@ export default function ReportsPage({ navigation }: any) {
     fetchTransactions();
   }, [startDate, endDate]);
 
+  // Só gastos entram no total e no gráfico; receitas e "outro" ficam de fora
+  const expenses = entries.filter((entry) => getEntryType(entry) === "gasto");
+  const incomes = entries.filter((entry) => getEntryType(entry) === "receita");
+
   // 🔥 Gera dados do gráfico dinamicamente
   const getChartDataByCategory = () => {
     const categoryMap = new Map<string, number>();
 
-    entries.forEach((entry) => {
-      const current = categoryMap.get(entry.category) || 0;
-      categoryMap.set(entry.category, current + entry.amount);
+    expenses.forEach((entry) => {
+      const category = entry.category || "Sem categoria";
+      const current = categoryMap.get(category) || 0;
+      categoryMap.set(category, current + getEntryAmount(entry));
     });
 
     const labels = Array.from(categoryMap.keys());
@@ -94,8 +116,10 @@ export default function ReportsPage({ navigation }: any) {
 
   const chartData = getChartDataByCategory();
 
-  // 🔥 CALCULA A SOMA TOTAL DE GASTOS
-  const totalExpenses = entries.reduce((sum, entry) => sum + entry.amount, 0);
+  // 🔥 CALCULA OS TOTAIS DO PERÍODO
+  const totalExpenses = expenses.reduce((sum, entry) => sum + getEntryAmount(entry), 0);
+  const totalIncome = incomes.reduce((sum, entry) => sum + getEntryAmount(entry), 0);
+  const balance = totalIncome - totalExpenses;
 
   const handleStartDateChange = (event: any, selectedDate?: Date) => {
     setShowStartPicker(false);
@@ -157,9 +181,21 @@ export default function ReportsPage({ navigation }: any) {
       {/* Card de Total de Gastos */}
       <View style={style.totalContainer}>
         <Text style={style.totalLabel}>Total de Gastos</Text>
-        <Text style={style.totalAmount}>
-          R$ {totalExpenses.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </Text>
+        <Text style={style.totalAmount}>R$ {formatCurrency(totalExpenses)}</Text>
+      </View>
+
+      {/* Receitas e saldo do período */}
+      <View style={style.summaryContainer}>
+        <View style={style.summaryCard}>
+          <Text style={style.summaryLabel}>Receitas</Text>
+          <Text style={style.summaryAmount}>R$ {formatCurrency(totalIncome)}</Text>
+        </View>
+        <View style={[style.summaryCard, balance < 0 && style.summaryCardNegative]}>
+          <Text style={style.summaryLabel}>Saldo</Text>
+          <Text style={[style.summaryAmount, balance < 0 && style.summaryAmountNegative]}>
+            {balance < 0 ? "- " : ""}R$ {formatCurrency(Math.abs(balance))}
+          </Text>
+        </View>
       </View>
 
       {/* Gráfico */}
@@ -177,10 +213,10 @@ export default function ReportsPage({ navigation }: any) {
           >
             <ActivityIndicator size="large" color={themas.colors.secondary} />
           </View>
-        ) : entries.length === 0 ? (
+        ) : expenses.length === 0 ? (
           // 🔥 SEM DADOS
           <Text style={{ textAlign: "center", paddingVertical: 20, color: '#ffffff' }}>
-            Nenhuma transação encontrada no período.
+            Nenhum gasto encontrado no período.
           </Text>
         ) : (
           <ScrollView
@@ -221,15 +257,42 @@ export default function ReportsPage({ navigation }: any) {
       <View style={style.lastEntriesContainer}>
         <Text style={style.lastEntriesTitle}>Últimas Entradas</Text>
 
-        {entries.slice(0, 10).map((entry) => (
-          <View key={entry.id} style={style.lastEntryItem}>
-            <Text style={style.lastEntryText}>
-              {entry.category} - R$ {entry.amount.toLocaleString("pt-BR")} (
-              {format(new Date(entry.createdAt), "dd/MM/yyyy")}
-              )
-            </Text>
-          </View>
-        ))}
+        {entries.length === 0 && !isLoading && (
+          <Text style={style.lastEntryEmpty}>Nenhuma transação encontrada no período.</Text>
+        )}
+
+        {entries.slice(0, 10).map((entry) => {
+          const type = getEntryType(entry);
+          const sign = type === "receita" ? "+ " : type === "gasto" ? "- " : "";
+
+          return (
+            <View
+              key={entry.id}
+              style={[
+                style.lastEntryItem,
+                type === "gasto" && style.lastEntryItemExpense,
+                type === "outro" && style.lastEntryItemOther,
+              ]}
+            >
+              <View style={style.lastEntryInfo}>
+                <Text style={style.lastEntryText}>{entry.category || "Sem categoria"}</Text>
+                <Text style={style.lastEntryDate}>
+                  {type === "receita" ? "Receita" : type === "gasto" ? "Gasto" : "Outro"} ·{" "}
+                  {format(new Date(entry.createdAt), "dd/MM/yyyy")}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  style.lastEntryAmount,
+                  type === "receita" && style.lastEntryAmountIncome,
+                  type === "outro" && style.lastEntryAmountOther,
+                ]}
+              >
+                {sign}R$ {formatCurrency(getEntryAmount(entry))}
+              </Text>
+            </View>
+          );
+        })}
       </View>
 
       <View style={{ height: 80 }} />
