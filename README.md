@@ -6,13 +6,10 @@
   **Your personal finance assistant: just tell Jorge what you spent.**
 
   ![Expo](https://img.shields.io/badge/Expo_SDK_54-000020?logo=expo&logoColor=white)
-  ![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?logo=react&logoColor=black)
   ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
   ![Express](https://img.shields.io/badge/Express_5-000000?logo=express&logoColor=white)
-  ![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
   ![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
-  ![License](https://img.shields.io/badge/license-MIT-green)
 
   [Overview](#-overview) · [Features](#-features) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api) · [PT-BR](#-resumo-em-português)
 </div>
