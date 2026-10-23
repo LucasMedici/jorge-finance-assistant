@@ -17,7 +17,7 @@ export function ConnectionProvider({children}: any) {
         return () => {
             unsubscribe();
         };
-    })
+    }, [])
 
     useEffect(() => {
         if(isConnected) {
