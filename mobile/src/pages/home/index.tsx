@@ -24,7 +24,6 @@ import jorgePensando from "../../assets/jorge_pensando.png";
 import jorgeContando from "../../assets/jorge_contando.png";
 import jorgeContando2 from "../../assets/jorge_contando2.png";
 import jorgeDescansando from "../../assets/jorge_descansando.png";
-import { useLoadUserFromToken } from "../../global/loadUserFromToken";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { ConnectionContext } from "../../context/ConectionContext";
@@ -43,7 +42,6 @@ export default function HomePage({ navigation }: any) {
   const authContext = useContext(AuthContext);
   const { user } = authContext!;
   const { isConnected } = useContext(ConnectionContext)
-  useLoadUserFromToken()
 
 
   // Função para obter mensagem de saudação baseada na hora
