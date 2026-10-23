@@ -89,19 +89,6 @@ What happens when you send a message:
 3. The result is saved as a `transaction` and returned to the app.
 4. The Reports screen reads `GET /transactions` for the selected period and groups the values by category.
 
-### Data model
-
-| `user` | `transaction` |
-| --- | --- |
-| `id` (uuid) | `id` (uuid) |
-| `email` (unique) | `phone` — owner of the transaction |
-| `password` (bcrypt hash) | `type` — `gasto` · `receita` · `outro` |
-| `phone` (unique) | `amount` |
-| `name` (optional) | `category`, `description` |
-| `createdAt` | `messageId`, `createdAt` |
-
-Both tables live in the `assistent` schema; transactions belong to a user through the `phone` field.
-
 ## 🗂 Project structure
 
 ```
