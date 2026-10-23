@@ -11,12 +11,14 @@
   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
   ![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
 
-  [Overview](#-overview) · [Features](#-features) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api) · [PT-BR](#-resumo-em-português)
+  [Overview](#overview) · [Why Jorge?](#why-jorge) · [Features](#features) · [Architecture](#architecture) · [Getting started](#getting-started) · [API](#api)
+
+  **English** · [Português](./README.pt-BR.md)
 </div>
 
 ---
 
-## 🚀 Overview
+## Overview
 
 Jorge is a mobile app with an AI-powered chat for tracking personal finances. Instead of filling in forms, you write
 what happened in plain Portuguese — Jorge understands it, stores it as a transaction and turns it into reports.
@@ -33,39 +35,48 @@ This repository contains the whole product:
 | [`mobile/`](./mobile) | Android app | Expo · React Native · TypeScript | EAS Build (APK) |
 | [`backend/`](./backend) | REST API | Node.js · Express · Prisma · PostgreSQL · OpenAI | Railway |
 
-**Built to be cheap to run:** each message costs a single, short `gpt-4o-mini` call — everything else (auth,
-storage, reports) runs without AI.
+## Why Jorge?
 
-## 🖼 Screenshots
+Most finance apps make you open a form, pick a category and type a value — for every single coffee. That friction
+is exactly why people stop tracking their money after a couple of weeks. I wanted something closer to how I
+already talk about money: send a message, the way you'd text a friend, and let the app do the rest.
+
+Jorge is built around three rules:
+
+- **Writing is the interface.** One sentence per entry. No forms, no menus.
+- **Cheap to run.** A single, short `gpt-4o-mini` call per message — auth, storage and reports don't use AI at all.
+- **Simple on purpose.** It tracks what came in and what went out, by category. It is not a budgeting suite.
+
+## Screenshots
 
 | Login | Chat | Reports |
 | :---: | :---: | :---: |
 | <img src="./mobile/doc-images/jorge_login.PNG" width="230" alt="Login screen" /> | <img src="./mobile/doc-images/jorge_chat.PNG" width="230" alt="Chat screen" /> | <img src="./mobile/doc-images/jorge_reports.PNG" width="230" alt="Reports screen" /> |
 
-## 🔑 Features
+## Features
 
-### 📱 Mobile app
+### Mobile app
 
-- **Account & session** — sign up with email, password and phone; email/password login; the JWT is kept in
-  AsyncStorage so you stay logged in, and every request is sent with `Authorization: Bearer <token>`.
-- **Chat with Jorge** 💬 — WhatsApp-style conversation with user/bot bubbles, and an animated Jorge that "thinks"
+- 🔐 **Account & session** — sign up with email, password and phone; the JWT is kept in AsyncStorage so you stay
+  logged in, and every request is sent with `Authorization: Bearer <token>`.
+- 💬 **Chat with Jorge** — WhatsApp-style conversation with user/bot bubbles, and an animated Jorge that "thinks"
   and "counts" while your message is processed.
-- **Offline queue** 📶 — connectivity is watched with NetInfo; messages written offline are stored locally and sent
+- 📶 **Offline queue** — connectivity is watched with NetInfo; messages written offline are stored locally and sent
   automatically when the connection comes back.
-- **Reports** 📊 — total for the period, bar chart by category and the latest entries, with a date range filter
+- 📊 **Reports** — total for the period, bar chart by category and the latest entries, with a date range filter
   (default: first day of the month → today).
-- **Profile** 👤 — view your email, edit your display name and log out.
+- 👤 **Profile** — view your email, edit your display name and log out.
 
-### ⚡ API
+### API
 
-- **Natural language → transaction** 🤖 — the message is sent to OpenAI with a strict extraction prompt that returns
+- 🤖 **Natural language → transaction** — the message is sent to OpenAI with a strict extraction prompt that returns
   `valor` (amount), `tipo` (`gasto` / `receita` / `outro`), `categoria` and `comentario`, which is saved as a transaction.
-- **Cost guards** — messages are limited to 150 characters, with low temperature and a small `max_tokens`.
-- **Authentication** 🔑 — signup and login with bcrypt-hashed passwords and JWT; protected routes go through an auth middleware.
-- **Transactions by period** — the user's transactions filtered by date, newest first.
-- **Interactive docs** 📄 — Swagger / OpenAPI at `/api-docs`.
+- 💸 **Cost guards** — messages are limited to 150 characters, with low temperature and a small `max_tokens`.
+- 🔑 **Authentication** — signup and login with bcrypt-hashed passwords and JWT; protected routes go through an auth middleware.
+- 📅 **Transactions by period** — the user's transactions filtered by date, newest first.
+- 📄 **Interactive docs** — Swagger / OpenAPI at `/api-docs`.
 
-## 🏗 Architecture
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -83,40 +94,40 @@ What happens when you send a message:
 
 1. The app posts the text to `POST /webhook/messages` (or keeps it in the offline queue if there's no connection).
 2. The API validates the token and the message size, then asks OpenAI to extract amount, type and category.
-3. The result is saved as a `transaction` and returned to the app.
+3. The result is saved as a transaction and returned to the app.
 4. The Reports screen reads `GET /transactions` for the selected period and groups the values by category.
 
-## 🗂 Project structure
+### Project structure
 
 ```
 .
 ├── backend/
 │   ├── prisma/
-│   │   ├── schema.prisma       🔹 data model
-│   │   └── migrations/         🔹 SQL migrations
+│   │   ├── schema.prisma       data model
+│   │   └── migrations/         SQL migrations
 │   ├── src/
-│   │   ├── routes/             🔹 Express routes + OpenAPI annotations
-│   │   ├── services/           🔹 business logic (chat/OpenAI, auth, users, transactions)
-│   │   ├── middlewares/        🔹 JWT auth
-│   │   ├── lib/prisma.ts       🔹 Prisma client
-│   │   ├── swagger.ts          🔹 Swagger / OpenAPI setup
-│   │   └── index.ts            🔹 app entry point
-│   └── Procfile                🔹 Railway start command
+│   │   ├── routes/             Express routes + OpenAPI annotations
+│   │   ├── services/           business logic (chat/OpenAI, auth, users, transactions)
+│   │   ├── middlewares/        JWT auth
+│   │   ├── lib/prisma.ts       Prisma client
+│   │   ├── swagger.ts          Swagger / OpenAPI setup
+│   │   └── index.ts            app entry point
+│   └── Procfile                Railway start command
 │
 └── mobile/
-    ├── App.tsx                 🔹 providers + navigation
-    ├── app.config.ts           🔹 Expo config (reads API_URL)
-    ├── eas.json                🔹 build profiles
+    ├── App.tsx                 providers + navigation
+    ├── app.config.ts           Expo config (reads API_URL)
+    ├── eas.json                build profiles
     └── src/
-        ├── pages/              🔹 login, register, home (chat), reports, profile
-        ├── routes/             🔹 stack + bottom tabs
-        ├── context/            🔹 auth and connectivity
-        ├── services/api.ts     🔹 axios instance with the auth interceptor
-        ├── global/             🔹 theme, fonts, token helpers, offline queue
-        └── assets/             🔹 Jorge illustrations and app icons
+        ├── pages/              login, register, home (chat), reports, profile
+        ├── routes/             stack + bottom tabs
+        ├── context/            auth and connectivity
+        ├── services/api.ts     axios instance with the auth interceptor
+        ├── global/             theme, fonts, token helpers, offline queue
+        └── assets/             Jorge illustrations and app icons
 ```
 
-## ⚡ Getting started
+## Getting started
 
 ### Prerequisites
 
@@ -155,10 +166,11 @@ npm install
 npm start                       # scan the QR code with Expo Go, or press "a" for Android
 ```
 
-> **Tip:** `localhost` only works on the computer itself. On a physical phone, point `API_URL` to your machine's
-> IP on the local network (e.g. `http://192.168.0.10:3065`); on the Android emulator, use `http://10.0.2.2:3065`.
+> [!TIP]
+> `localhost` only works on the computer itself. On a physical phone, point `API_URL` to your machine's IP on the
+> local network (e.g. `http://192.168.0.10:3065`); on the Android emulator, use `http://10.0.2.2:3065`.
 
-## 📨 API
+## API
 
 All routes except `/auth/*` and `/serverstatus` require `Authorization: Bearer <token>`.
 
@@ -202,31 +214,3 @@ The full, interactive documentation is served by Swagger at **`/api-docs`**:
 <img width="800" alt="Jorge API — Swagger / OpenAPI docs" src="https://github.com/user-attachments/assets/e1d84014-baf4-4331-9f50-07ad4a392c70" />
 
 Prefer Insomnia? Import the ready-made collection: [Insomnia-RequestsFile.yaml](https://github.com/user-attachments/files/24020089/Insomnia-RequestsFile.yaml).
-
----
-
-## 🇧🇷 Resumo em português
-
-**Jorge** é um assistente financeiro pessoal: você conta no chat o que gastou ou recebeu ("gastei 50 reais no
-mercado"), a IA extrai valor, tipo e categoria, e o app transforma isso em relatórios.
-
-- **App (`mobile/`)** — Expo + React Native: cadastro e login com JWT, chat com o Jorge 💬, fila offline com
-  reenvio automático 📶, relatórios por categoria com filtro de datas 📊 e perfil.
-- **API (`backend/`)** — Express + Prisma + PostgreSQL: autenticação, interpretação das mensagens com
-  `gpt-4o-mini` (uma chamada curta por mensagem, para manter o custo baixo), transações por período e documentação
-  Swagger em `/api-docs`.
-
-**Rodando localmente**
-
-```bash
-# API
-cd backend && cp .env.example .env    # preencha as variáveis
-yarn install && npx prisma generate && npx prisma migrate deploy && yarn dev
-
-# App (em outro terminal)
-cd mobile && cp .env.example .env     # API_URL — em celular físico use o IP da máquina na rede
-npm install && npm start
-```
-
-**Deploy:** API na Railway (Root Directory `/backend`) e app Android gerado como APK pelo EAS
-(`eas build -p android --profile preview`).
