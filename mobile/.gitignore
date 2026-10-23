@@ -1,0 +1,75 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.expo-shared/
+eas.json.bak
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env*.local
+.env.production
+.env.development
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
