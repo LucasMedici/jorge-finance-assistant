@@ -1,0 +1,8 @@
+# Cada pasta (backend/, mobile/) tem seu próprio .gitignore.
+# Aqui ficam só os padrões comuns ao monorepo inteiro.
+node_modules/
+.env
+.env*.local
+.DS_Store
+.vscode/
+.idea/
