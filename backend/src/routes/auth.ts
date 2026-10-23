@@ -1,9 +1,16 @@
 import { Router, Request, Response } from 'express';
-import { createUser, findUserByEmail } from '../services/userService';
+import { z } from 'zod';
+import { createUser, CreateUserSchema, findUserByEmail, UserAlreadyExistsError, UniqueUserField } from '../services/userService';
 import { signLoginToken, verifyPassword, hashPassword } from '../services/authService';
 
 
 const router = Router();
+
+const ALREADY_EXISTS_MESSAGES: Record<UniqueUserField | 'unknown', string> = {
+    email: 'Este e-mail já está cadastrado',
+    phone: 'Este telefone já está cadastrado',
+    unknown: 'Usuário já cadastrado',
+};
 
 /**
  * @openapi
@@ -43,28 +50,62 @@ const router = Router();
  *                 phone:
  *                   type: string
  *       400:
- *         description: Campos obrigatórios ausentes
+ *         description: Dados inválidos (campos ausentes ou fora do formato)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "E-mail inválido; A senha deve ter pelo menos 6 caracteres"
+ *                 fields:
+ *                   type: object
+ *                   description: Mensagens de erro por campo
+ *                   additionalProperties:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   example:
+ *                     email: ["E-mail inválido"]
+ *                     password: ["A senha deve ter pelo menos 6 caracteres"]
  *       409:
- *         description: Usuário já existe
+ *         description: E-mail ou telefone já cadastrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Este telefone já está cadastrado"
  *       500:
  *         description: Erro interno ao criar usuário
  */
 router.post('/signup', async (req: Request, res: Response) => {
-    const { email, password, phone } = req.body;
-    if(!email || !password || !phone) {
-        return res.status(400).json({ error: "Email, password, and phone are required" });
+    const parsed = CreateUserSchema.safeParse(req.body ?? {});
+    if(!parsed.success) {
+        const messages = [...new Set(parsed.error.issues.map((issue) => issue.message))];
+        return res.status(400).json({
+            error: messages.join('; '),
+            fields: z.flattenError(parsed.error).fieldErrors,
+        });
     }
+    const { email, password, phone } = parsed.data;
 
     try{
         const existingUser = await findUserByEmail(email);
         if(existingUser) {
-            return res.status(409).json({ error: "User already exists" });
+            return res.status(409).json({ error: ALREADY_EXISTS_MESSAGES.email });
         }
 
         const hashedPassword = await hashPassword(password);
         const user = await createUser({ email, password: hashedPassword, phone });
         return res.status(201).json({ id: user.id, email: user.email, phone: user.phone });
     } catch (error) {
+        if (error instanceof UserAlreadyExistsError) {
+            return res.status(409).json({ error: ALREADY_EXISTS_MESSAGES[error.field ?? 'unknown'] });
+        }
         console.error('Signup error:', error);
         return res.status(500).json({ error: "Internal server error" });
     }
