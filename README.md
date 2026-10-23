@@ -14,7 +14,7 @@
   ![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-green)
 
-  [Overview](#-overview) · [Features](#-features) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api) · [Deployment](#-deployment) · [PT-BR](#-resumo-em-português)
+  [Overview](#-overview) · [Features](#-features) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api) · [PT-BR](#-resumo-em-português)
 </div>
 
 ---
@@ -205,34 +205,6 @@ The full, interactive documentation is served by Swagger at **`/api-docs`**:
 <img width="800" alt="Jorge API — Swagger / OpenAPI docs" src="https://github.com/user-attachments/assets/e1d84014-baf4-4331-9f50-07ad4a392c70" />
 
 Prefer Insomnia? Import the ready-made collection: [Insomnia-RequestsFile.yaml](https://github.com/user-attachments/files/24020089/Insomnia-RequestsFile.yaml).
-
-## ☁️ Deployment
-
-### API → Railway
-
-- Service connected to this repository with **Root Directory `/backend`** (watch path `/backend/**`, so app-only
-  changes don't redeploy the API).
-- Build: `yarn build` (`prisma generate` + `tsc`) · Start: `Procfile` → `node dist/index.js`.
-- Environment variables are the same as in `.env.example`.
-- Migrations don't run automatically: apply them with `npx prisma migrate deploy` when the schema changes.
-
-### Mobile → EAS Build
-
-```bash
-cd mobile
-eas build -p android --profile preview      # generates an installable APK
-```
-
-The production `API_URL` is defined in the `env` of each profile in `mobile/eas.json`.
-
-## 🗺 Roadmap
-
-Version **2.0** is in progress: security and bug fixes, a refreshed interface and new features — see the
-[open issues](../../issues).
-
-## 📄 License
-
-[MIT](./LICENSE) © Lucas Medici
 
 ---
 
