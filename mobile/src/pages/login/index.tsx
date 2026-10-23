@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react"; 
+import React, {useState, useEffect, useContext} from "react"; 
 import {Text, View, Image, TextInput, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert, BackHandler} from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { style } from "./styles";
@@ -6,12 +6,13 @@ import { fonts } from "../../global/fonts";
 import { themas } from "../../global/themes";
 import { api } from "../../services/api";
 import jorgeAcenando from "../../assets/jorge_acenando.png";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AuthContext } from "../../context/AuthContext";
 
 
 export default function LoginPage({navigation}: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { signIn } = useContext(AuthContext)!;
 
   // Handler para o botão de voltar do celular - fecha o app
   useFocusEffect(
@@ -49,9 +50,8 @@ export default function LoginPage({navigation}: any) {
       });
 
       if (response.status === 200) {
-        const token = response.data.token;
-        await AsyncStorage.setItem('userToken', token);
-        navigation.navigate('MainApp');
+        // Salva o token e carrega o user; o stack troca para o MainApp sozinho
+        await signIn(response.data.token);
       }
     } catch (error) {
       Alert.alert(

@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { style } from "./styles";
 import { themas } from "../../global/themes";
 
@@ -24,7 +23,7 @@ export default function ProfilePage({ navigation }: any) {
   const [tempName, setTempName] = useState(userName);
 
   const authContext = useContext(AuthContext);
-  const { user } = authContext!;
+  const { user, signOut } = authContext!;
 
 
   // Handler para o botão de voltar do celular - volta para a tela anterior
@@ -50,6 +49,8 @@ export default function ProfilePage({ navigation }: any) {
       Alert.alert("Erro", "O nome não pode estar vazio");
       return;
     }
+
+    if (!user) return;
 
     try{
       const response = await api.put(`/user/${user.id}`, {
@@ -87,8 +88,8 @@ export default function ProfilePage({ navigation }: any) {
           style: "destructive",
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('userToken');
-              navigation.navigate('Login');
+              // Limpa token + user; o stack volta para o Login e desmonta as telas logadas
+              await signOut();
             } catch (error) {
               Alert.alert("Erro", "Não foi possível fazer logout");
             }
@@ -100,6 +101,8 @@ export default function ProfilePage({ navigation }: any) {
 
 
   const handleGetUsername = async () => {
+     if (!user) return;
+
      try{
       const response = await api.get(`/user/${user.id}`);
 
@@ -115,7 +118,7 @@ export default function ProfilePage({ navigation }: any) {
 
   useEffect(() => {
     handleGetUsername();
-  }, []);
+  }, [user?.id]);
 
   return (
     <ScrollView style={style.container} showsVerticalScrollIndicator={false}>
@@ -196,7 +199,7 @@ export default function ProfilePage({ navigation }: any) {
         {/* Card de Email */}
         <View style={style.card}>
           <Text style={style.cardLabel}>Email</Text>
-          <Text style={style.cardValue}>{user.email}</Text>
+          <Text style={style.cardValue}>{user?.email ?? ""}</Text>
         </View>
 
         {/* Card de Versão */}
