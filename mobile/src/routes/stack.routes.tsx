@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator } from 'react-native';
@@ -8,12 +8,13 @@ import RegisterPage from '../pages/register';
 import TabRoutes from './tab.routes';
 import ProfilePage from '../pages/profile';
 import { AuthContext } from '../context/AuthContext';
+import type { RootStackParamList } from './types';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function Routes() {
   // A sessão (token validado + user) é carregada no AuthProvider
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext)!;
 
   if (loading) {
     return (
