@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
-import axios from "axios";
+import { isAxiosError } from "axios";
 import { style } from "./styles";
 import { themas } from "../../global/themes";
 import jorgePensando2 from "../../assets/jorge_pensando2.png";
@@ -84,7 +84,7 @@ function buildSuccessReply(data: Partial<WebhookSuccessResponse>): string {
 
 // Extrai a mensagem amigável de um erro 400; qualquer outro erro vira a mensagem genérica
 function getErrorReply(error: unknown): string {
-  if (axios.isAxiosError<WebhookErrorResponse>(error) && error.response?.status === 400) {
+  if (isAxiosError<WebhookErrorResponse>(error) && error.response?.status === 400) {
     const message = error.response.data?.error;
     if (typeof message === "string" && message.trim() !== "") {
       return message;
@@ -160,7 +160,7 @@ export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
       );
 
       return () => subscription.remove();
-    }, [navigation])
+    }, [])
   );
 
   const addBotMessage = (text: string) => {
