@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 import { api } from '../services/api';
 
 const QUEUE_KEY = 'offlineQueue';
@@ -17,6 +18,8 @@ export interface OfflineQueueItem {
 // Trava de módulo: impede duas execuções simultâneas (ex.: conexão oscilando)
 // que reenviariam a mesma mensagem.
 let isProcessing = false;
+// Pedido que chegou durante uma execução (ex.: troca de conta); roda ao final dela.
+let pendingPhone: string | null = null;
 
 async function readQueue(): Promise<OfflineQueueItem[]> {
   const raw = await AsyncStorage.getItem(QUEUE_KEY);
@@ -29,25 +32,42 @@ async function readQueue(): Promise<OfflineQueueItem[]> {
   }
 }
 
+// O interceptor do axios usa o token salvo no momento do envio; confere que ele é do dono da mensagem.
+async function isTokenFrom(userPhone: string): Promise<boolean> {
+  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  if (!token) return false;
+  try {
+    return jwtDecode<{ phone?: string }>(token).phone === userPhone;
+  } catch {
+    return false;
+  }
+}
+
 export async function addToOfflineQueue(userMessage: OfflineQueueItem) {
   const queue = await readQueue();
   queue.push(userMessage);
   await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 }
 
-export async function processOfflineQueue() {
-  if (isProcessing) return;
+// Envia só as mensagens do usuário logado (`userPhone`). Itens de outra conta ou sem
+// `userPhone` ficam na fila até esse usuário logar de novo.
+export async function processOfflineQueue(userPhone: string | null | undefined) {
+  if (!userPhone) return;
+
+  if (isProcessing) {
+    pendingPhone = userPhone;
+    return;
+  }
   isProcessing = true;
 
   try {
-    // Sem usuário logado o envio falharia com 401; espera o login.
-    const token = await AsyncStorage.getItem(TOKEN_KEY);
-    if (!token) return;
-
     const queue = await readQueue();
-    if (queue.length === 0) return;
+    const userItems = queue.filter((item) => item.userPhone === userPhone);
 
-    for (const userMessage of queue) {
+    for (const userMessage of userItems) {
+      // A sessão pode ter mudado (logout/login) no meio do envio
+      if (!(await isTokenFrom(userPhone))) break;
+
       try {
         await api.post(`/webhook/messages`, { userMessage });
       } catch (error) {
@@ -60,6 +80,12 @@ export async function processOfflineQueue() {
     console.log('Erro ao ler fila OFFLINE: ', error);
   } finally {
     isProcessing = false;
+  }
+
+  if (pendingPhone) {
+    const nextPhone = pendingPhone;
+    pendingPhone = null;
+    await processOfflineQueue(nextPhone);
   }
 }
 

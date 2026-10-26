@@ -1,12 +1,12 @@
-import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 import { themas } from '../global/themes';
 
 import HomePage from '../pages/home';
 import ReportsPage from '../pages/reports';
+import type { TabParamList } from './types';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 export default function TabRoutes() {
   return (

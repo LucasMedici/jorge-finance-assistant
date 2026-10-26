@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,11 +13,11 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { style } from "./styles";
 import { themas } from "../../global/themes";
 
-import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { api } from "../../services/api";
+import type { RootStackScreenProps } from "../../routes/types";
 
-export default function ProfilePage({ navigation }: any) {
+export default function ProfilePage({ navigation }: RootStackScreenProps<'Profile'>) {
   const [userName, setUserName] = useState("Usuário");
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(userName);

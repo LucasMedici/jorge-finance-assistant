@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { BarChart } from "react-native-chart-kit";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { style } from "./styles";
@@ -19,14 +19,24 @@ import { api } from "../../services/api";
 
 type TransactionType = "gasto" | "receita" | "outro";
 
+// Item de GET /transactions (model `transaction` do backend)
+type Transaction = {
+  id: string;
+  type: string;
+  amount: number;
+  category?: string | null;
+  description?: string | null;
+  createdAt: string;
+};
+
 // Normaliza o tipo vindo da API (string livre gerada pela IA)
-const getEntryType = (entry: any): TransactionType => {
+const getEntryType = (entry: Transaction): TransactionType => {
   const type = String(entry?.type ?? "").trim().toLowerCase();
   if (type === "gasto" || type === "receita") return type;
   return "outro";
 };
 
-const getEntryAmount = (entry: any): number => Number(entry?.amount) || 0;
+const getEntryAmount = (entry: Transaction): number => Number(entry?.amount) || 0;
 
 const formatCurrency = (value: number) =>
   value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -34,7 +44,7 @@ const formatCurrency = (value: number) =>
 // Data local em YYYY-MM-DD (toISOString usa UTC e pula um dia à noite no Brasil)
 const toApiDate = (date: Date) => format(date, "yyyy-MM-dd");
 
-export default function ReportsPage({ navigation }: any) {
+export default function ReportsPage() {
   const screenWidth = Dimensions.get("window").width;
 
   const [startDate, setStartDate] = useState(
@@ -44,7 +54,7 @@ export default function ReportsPage({ navigation }: any) {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // 🔥 FUNÇÃO QUE CHAMA SUA API
@@ -121,12 +131,12 @@ export default function ReportsPage({ navigation }: any) {
   const totalIncome = incomes.reduce((sum, entry) => sum + getEntryAmount(entry), 0);
   const balance = totalIncome - totalExpenses;
 
-  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+  const handleStartDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowStartPicker(false);
     if (selectedDate) setStartDate(selectedDate);
   };
 
-  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+  const handleEndDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowEndPicker(false);
     if (selectedDate) setEndDate(selectedDate);
   };

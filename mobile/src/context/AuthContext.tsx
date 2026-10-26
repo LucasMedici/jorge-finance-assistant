@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
@@ -44,7 +44,7 @@ function getUserFromToken(token: string): User | null {
   }
 }
 
-export function AuthProvider({children}: any) {
+export function AuthProvider({children}: {children: ReactNode}) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 

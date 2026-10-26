@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useContext} from "react"; 
+import React, {useState, useContext} from "react";
 import {Text, View, Image, TextInput, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert, BackHandler} from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { style } from "./styles";
@@ -7,9 +7,10 @@ import { themas } from "../../global/themes";
 import { api } from "../../services/api";
 import jorgeAcenando from "../../assets/jorge_acenando.png";
 import { AuthContext } from "../../context/AuthContext";
+import type { RootStackScreenProps } from "../../routes/types";
 
 
-export default function LoginPage({navigation}: any) {
+export default function LoginPage({navigation}: RootStackScreenProps<'Login'>) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { signIn } = useContext(AuthContext)!;
