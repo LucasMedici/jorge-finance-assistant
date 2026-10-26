@@ -21,12 +21,14 @@ model transaction {
   id          String   @id @default(uuid())
   phone       String
   type        String
-  amount      Float
+  amount      Decimal  @db.Decimal(12, 2)
   category    String?
   description String?
   messageId   String?
   createdAt   DateTime @default(now())
 
+  // O id vem do celular (Date.now()), então só é único por usuário (phone).
+  @@unique([phone, messageId])
   @@schema("assistent")
 }
 
