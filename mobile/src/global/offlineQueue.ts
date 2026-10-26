@@ -43,6 +43,29 @@ async function isTokenFrom(userPhone: string): Promise<boolean> {
   }
 }
 
+// O que fazer com um item cujo envio falhou:
+// - 'discard': o backend rejeitou a mensagem em si (4xx, ex.: 400 NO_TRANSACTION); reenviar nunca vai
+//   funcionar, então o item sai da fila para não travar os seguintes.
+// - 'retry': falha transitória (rede, 5xx, 401/408/429, 400 com código OPENAI_*); o item fica e a fila para.
+export type SendFailureAction = 'discard' | 'retry';
+
+const RETRYABLE_4XX = new Set([401, 408, 429]);
+
+export function getSendFailureAction(error: unknown): SendFailureAction {
+  const response = (error as { response?: { status?: unknown; data?: unknown } } | null)?.response;
+  const status = response?.status;
+
+  // Sem resposta (erro de rede, timeout do cliente) ou status desconhecido
+  if (typeof status !== 'number') return 'retry';
+  if (status < 400 || status >= 500 || RETRYABLE_4XX.has(status)) return 'retry';
+
+  // Erros da OpenAI chegam como 400 mas são transitórios
+  const code = (response?.data as { code?: unknown } | null | undefined)?.code;
+  if (typeof code === 'string' && code.startsWith('OPENAI_')) return 'retry';
+
+  return 'discard';
+}
+
 export async function addToOfflineQueue(userMessage: OfflineQueueItem) {
   const queue = await readQueue();
   queue.push(userMessage);
@@ -50,7 +73,8 @@ export async function addToOfflineQueue(userMessage: OfflineQueueItem) {
 }
 
 // Envia só as mensagens do usuário logado (`userPhone`). Itens de outra conta ou sem
-// `userPhone` ficam na fila até esse usuário logar de novo.
+// `userPhone` ficam na fila até esse usuário logar de novo. Itens rejeitados pelo backend
+// são descartados (ver `getSendFailureAction`); em falha transitória a fila para no item.
 export async function processOfflineQueue(userPhone: string | null | undefined) {
   if (!userPhone) return;
 
@@ -71,8 +95,11 @@ export async function processOfflineQueue(userPhone: string | null | undefined) 
       try {
         await api.post(`/webhook/messages`, { userMessage });
       } catch (error) {
-        console.log('Erro ao processar fila OFFLINE: ', error);
-        break;
+        if (getSendFailureAction(error) === 'retry') {
+          console.log('Erro ao processar fila OFFLINE: ', error);
+          break;
+        }
+        console.log('Mensagem da fila OFFLINE rejeitada pelo servidor, descartada: ', error);
       }
       await removeFromQueue(userMessage.id);
     }
