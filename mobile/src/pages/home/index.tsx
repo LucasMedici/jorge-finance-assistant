@@ -26,6 +26,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { ConnectionContext } from "../../context/ConectionContext";
 import { api } from "../../services/api";
 import { addToOfflineQueue } from "../../global/offlineQueue";
+import type { TabScreenProps } from "../../routes/types";
 
 interface Message {
   id: string;
@@ -99,7 +100,7 @@ const getRandomThinkingImage = (): ImageSourcePropType =>
 const getRandomCountingImage = (): ImageSourcePropType =>
   Math.random() > 0.5 ? jorgeContando : jorgeContando2;
 
-export default function HomePage({ navigation }: any) {
+export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
   const authContext = useContext(AuthContext);
   const { user } = authContext!;
   const { isConnected } = useContext(ConnectionContext)

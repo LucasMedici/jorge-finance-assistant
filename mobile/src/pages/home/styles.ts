@@ -47,26 +47,6 @@ export const style = StyleSheet.create({
     fontSize: 20,
     color: '#FFFFFF',
   },
-  header: {
-    backgroundColor: themas.colors.primary,
-    borderBottomWidth: 3,
-    borderBottomColor: '#8DC63E',
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerImage: {
-    width: 50,
-    height: 50,
-    marginBottom: 5,
-  },
   chatContainer: {
     flexGrow: 1,
     paddingHorizontal: 15,
@@ -149,12 +129,6 @@ export const style = StyleSheet.create({
   typingText: {
     color: '#666666',
     fontFamily: fonts.light,
-  },
-  sendButtonText: {
-    color: '#FFFFFF',
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   tabBarSpace: {
     height: 20,
