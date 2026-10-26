@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { prismaMock, processUserMessageMock } = vi.hoisted(() => ({
   prismaMock: {
-    transaction: { create: vi.fn(), findMany: vi.fn() },
+    transaction: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn() },
     user: { findUnique: vi.fn(), update: vi.fn() },
   },
   processUserMessageMock: vi.fn(),
