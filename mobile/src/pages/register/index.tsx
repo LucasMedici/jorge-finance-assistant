@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react"; 
+import React, {useState} from "react";
 import {Text, View, Image, TextInput, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert, BackHandler} from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { style } from "./styles";
@@ -7,8 +7,9 @@ import { themas } from "../../global/themes";
 
 import jorgeAcenando from "../../assets/jorge_acenando.png";
 import { api } from "../../services/api";
+import type { RootStackScreenProps } from "../../routes/types";
 
-export default function RegisterPage({navigation}: any) {
+export default function RegisterPage({navigation}: RootStackScreenProps<'Register'>) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [number, setNumber] = useState('');

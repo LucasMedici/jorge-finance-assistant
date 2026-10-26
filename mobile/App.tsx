@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLoadFonts, fonts } from './src/global/fonts';
+import { useLoadFonts } from './src/global/fonts';
 import { themas } from './src/global/themes';
 import Routes from './src/routes/stack.routes';
 

@@ -1,12 +1,16 @@
-import React, {createContext, useEffect, useState} from "react";
+import {createContext, ReactNode, useEffect, useState} from "react";
 import NetInfo from "@react-native-community/netinfo";
 import { processOfflineQueue } from "../global/offlineQueue";
 
-export const ConnectionContext = createContext({
+type ConnectionContextType = {
+    isConnected: boolean;
+};
+
+export const ConnectionContext = createContext<ConnectionContextType>({
     isConnected: true,
 })
 
-export function ConnectionProvider({children}: any) {
+export function ConnectionProvider({children}: {children: ReactNode}) {
     const [isConnected, setIsConnected] = useState(true);
 
     useEffect(() => {
