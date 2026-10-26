@@ -69,7 +69,7 @@ export async function findUserByEmail(email:string) {
 export async function findUserById(id:string) {
     const user = await prisma.user.findUnique({where: {id}});
     if (!user) return null;
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword;
 }
 
@@ -86,6 +86,6 @@ export async function updateUserName(id: string, data: UpdateUserNameInput) {
         where: { id },
         data: { name: validated.data.name },
         });
-    const { password, ...userWithoutPassword } = updatedUser;
+    const { password: _password, ...userWithoutPassword } = updatedUser;
     return userWithoutPassword;
 }

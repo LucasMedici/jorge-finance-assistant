@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { createUser, CreateUserSchema, findUserByEmail, UserAlreadyExistsError, UniqueUserField } from '../services/userService';
-import { signLoginToken, verifyPassword, hashPassword } from '../services/authService';
+import { signLoginToken, hashPassword } from '../services/authService';
 
 
 const router = Router();

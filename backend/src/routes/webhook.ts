@@ -16,7 +16,9 @@ const MAX_MESSAGE_ID_LENGTH = 100;
  * Id da mensagem gerado no celular. O app envia em `userMessage.id`; `body.id` é aceito por
  * compatibilidade. Sem id válido a mensagem é processada normalmente, só que sem deduplicação.
  */
-function extractMessageId(body: any): string | null {
+type WebhookBody = { id?: unknown; userMessage?: { id?: unknown } } | undefined;
+
+function extractMessageId(body: WebhookBody): string | null {
   const raw = body?.userMessage?.id ?? body?.id;
   if (typeof raw === 'number' && Number.isFinite(raw)) return String(raw);
   if (typeof raw === 'string') {

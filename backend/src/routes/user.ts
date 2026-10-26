@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { findUserById, updateUserName } from '../services/userService';
 
 
@@ -47,8 +47,8 @@ router.put('/:id', async (req, res) => {
     try {
         const updatedUser = await updateUserName(id, { name });
         res.json(updatedUser);
-    } catch (error: any) {
-        res.status(400).json({ error: error.message });
+    } catch (error) {
+        res.status(400).json({ error: (error as Error).message });
     }
 });
 
@@ -89,8 +89,8 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({error: 'User not found'});
         }
         res.json(user);
-    } catch (error: any) {
-        res.status(400).json({ error: error.message });
+    } catch (error) {
+        res.status(400).json({ error: (error as Error).message });
     }
 }) 
 
