@@ -16,15 +16,23 @@ As duas pastas são projetos independentes (sem workspaces): cada uma tem seu `p
 
 - **Custo baixo é o objetivo principal.** Hoje é uma chamada curta ao `gpt-4o-mini` por mensagem.
   Não adicione chamadas extras ao LLM, modelos mais caros ou serviços pagos sem discutir antes.
-- Versão 2.0 em andamento: corrigir os problemas conhecidos (listados nos CLAUDE.md de cada pasta e nas
-  issues do GitHub), renovar a interface e adicionar funcionalidades.
+- Versão 2.0 em andamento: correções e melhorias acompanhadas pelas issues do GitHub; depois, renovar a
+  interface e adicionar funcionalidades.
 
 ## Contrato app ↔ API
 
 - Auth: `POST /auth/login` → `{ token }`. JWT com payload `{ sub, email, phone }`; o app decodifica esse
   payload no cliente e envia `Authorization: Bearer <token>` em tudo.
+- O backend identifica o usuário **sempre pelo token** (`req.user`); nada do body/URL define o dono dos dados.
+  Um 401 em qualquer rota faz o app deslogar.
 - Envio de mensagem: `POST /webhook/messages` com `{ userMessage: { id, text, sender, timestamp, userPhone } }`.
-- Relatórios: `GET /transactions?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`.
+  - `id` (gerado no celular) torna o envio idempotente: `phone` + `messageId` é único, e um reenvio devolve a
+    transação já gravada sem chamar a OpenAI.
+  - `userPhone` é ignorado pelo backend, mas o app usa para saber de quem é cada item da fila offline.
+  - Respostas: **200** `{ valor, tipo, categoria, comentario }`; **400** `{ error, code }` quando a mensagem não vira
+    transação (`code`: `NO_TRANSACTION`, `EMPTY_MESSAGE`, `MESSAGE_TOO_LONG`, `INVALID_JSON_RESPONSE`, `OPENAI_*`).
+- Relatórios: `GET /transactions?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`, datas no fuso de São Paulo (-03:00);
+  `amount` é `Decimal(12,2)` no banco e número no JSON.
 - Transações pertencem ao usuário pelo `phone` (não há FK entre `user` e `transaction`).
 
 Ao mudar o contrato, altere `backend/` e `mobile/` juntos, de preferência no mesmo commit.
@@ -37,9 +45,22 @@ Ao mudar o contrato, altere `backend/` e `mobile/` juntos, de preferência no me
 
 ## Deploy
 
-- **Backend:** Railway, serviço com Root Directory `/backend` (watch path `/backend/**`).
+- **Backend:** Railway, serviço com Root Directory `/backend` (watch path `/backend/**`), Node da versão em
+  `backend/.node-version`. **Todo merge na `main` que toca `backend/` vai para produção na hora**, enquanto o app
+  no celular só muda com um APK novo — mudanças no backend precisam continuar compatíveis com o APK instalado.
+  - Pre-deploy Command: `npx prisma migrate deploy` (migrations rodam antes de o código novo subir).
+  - `DATABASE_DIRECT_URL` precisa ser o **session pooler** do Supabase (mesmo host do `DATABASE_URL`, porta 5432,
+    sem `?pgbouncer=true`): o host direto `db.<ref>.supabase.co` só tem IPv6 e a Railway não alcança.
+  - `NODE_ENV=production` definido (esconde o `/api-docs`).
 - **Mobile:** `cd mobile && eas build -p android --profile preview` (APK). O `API_URL` de produção vem do `env`
   do profile em `mobile/eas.json`.
+
+## Fluxo de trabalho
+
+- Mudanças entram por **PR para a `main`** (nunca commit direto na `main`); o dono revisa e faz o merge.
+  Use `Closes #N` no corpo para fechar a issue no merge (ou `Parte de #N` quando resolver só uma parte).
+- Para trabalho em paralelo com subagentes, separe as tarefas por arquivos que não se sobrepõem, um worktree e
+  um PR por grupo; antes de liberar os PRs, junte as branches num worktree temporário e rode tsc/testes no conjunto.
 
 ## Git e commits
 
