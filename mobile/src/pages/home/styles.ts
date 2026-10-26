@@ -143,6 +143,13 @@ export const style = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  typingText: {
+    color: '#666666',
+    fontFamily: fonts.light,
+  },
   sendButtonText: {
     color: '#FFFFFF',
     fontFamily: fonts.medium,
