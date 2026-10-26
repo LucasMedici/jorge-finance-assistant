@@ -29,7 +29,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.9.2",
+    "@types/node": "^24.19.2",
     "@types/pg": "^8.15.6",
     "@types/supertest": "^7.2.1",
     "@types/swagger-jsdoc": "^6.0.4",
