@@ -16,6 +16,7 @@ npm start                  # expo start (Expo Go / dev client)
 npm run android            # abre no Android
 npx tsc --noEmit           # checagem de tipos
 npm test                   # Jest (jest-expo): lógica dos relatórios, fila offline, token
+npm run lint               # ESLint 9 (eslint.config.js = eslint-config-expo + prettier); deve ficar com 0 problemas
 npx expo export --platform android        # gera o bundle (bom para checar assets/imports; apague dist/ depois)
 eas build -p android --profile preview    # gera o APK
 ```
