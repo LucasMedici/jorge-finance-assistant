@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -6,25 +6,22 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  ImageSourcePropType,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   BackHandler,
-  ScrollView,
   Keyboard,
-  Alert,
 } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import axios from "axios";
 import { style } from "./styles";
-import { fonts } from "../../global/fonts";
 import { themas } from "../../global/themes";
 import jorgePensando2 from "../../assets/jorge_pensando2.png";
 import jorgePensando from "../../assets/jorge_pensando.png";
 import jorgeContando from "../../assets/jorge_contando.png";
 import jorgeContando2 from "../../assets/jorge_contando2.png";
-import jorgeDescansando from "../../assets/jorge_descansando.png";
-import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { ConnectionContext } from "../../context/ConectionContext";
 import { api } from "../../services/api";
@@ -37,6 +34,70 @@ interface Message {
   timestamp: Date;
   userPhone?: string;
 }
+
+// Resposta de sucesso do POST /webhook/messages (200)
+interface WebhookSuccessResponse {
+  valor: number;
+  tipo: "gasto" | "receita";
+  categoria: string;
+  comentario: string;
+}
+
+// Resposta de erro do POST /webhook/messages (400)
+interface WebhookErrorResponse {
+  error?: unknown;
+  code?: string;
+}
+
+const GENERIC_ERROR_MESSAGE =
+  "Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.";
+
+// Tempo que o Jorge fica "contando" depois de registrar, antes de voltar ao normal
+const COUNTING_DURATION_MS = 1500;
+
+// Formata um valor em reais no padrão pt-BR (ex.: 1200 -> "R$ 1.200,00").
+// Feito à mão para não depender do suporte a Intl do Hermes.
+function formatCurrency(value: number): string {
+  const [integerPart, decimalPart] = Math.abs(value).toFixed(2).split(".");
+  const withThousands = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${value < 0 ? "-" : ""}R$ ${withThousands},${decimalPart}`;
+}
+
+// Monta a resposta do Jorge a partir do que o backend registrou
+function buildSuccessReply(data: Partial<WebhookSuccessResponse>): string {
+  if (typeof data.valor !== "number" || !Number.isFinite(data.valor)) {
+    return "Anotado ✅";
+  }
+
+  const tipo = data.tipo === "receita" ? "Receita" : "Gasto";
+  const categoria = typeof data.categoria === "string" ? data.categoria.trim() : "";
+  const comentario = typeof data.comentario === "string" ? data.comentario.trim() : "";
+
+  let reply = `Anotado ✅ ${tipo} de ${formatCurrency(data.valor)}`;
+  reply += categoria ? ` em ${categoria}.` : ".";
+  if (comentario) {
+    reply += `\n📝 ${comentario}`;
+  }
+  return reply;
+}
+
+// Extrai a mensagem amigável de um erro 400; qualquer outro erro vira a mensagem genérica
+function getErrorReply(error: unknown): string {
+  if (axios.isAxiosError<WebhookErrorResponse>(error) && error.response?.status === 400) {
+    const message = error.response.data?.error;
+    if (typeof message === "string" && message.trim() !== "") {
+      return message;
+    }
+  }
+  return GENERIC_ERROR_MESSAGE;
+}
+
+// Funções para pegar uma imagem aleatória entre duas opções
+const getRandomThinkingImage = (): ImageSourcePropType =>
+  Math.random() > 0.5 ? jorgePensando : jorgePensando2;
+
+const getRandomCountingImage = (): ImageSourcePropType =>
+  Math.random() > 0.5 ? jorgeContando : jorgeContando2;
 
 export default function HomePage({ navigation }: any) {
   const authContext = useContext(AuthContext);
@@ -57,15 +118,6 @@ export default function HomePage({ navigation }: any) {
     }
   };
 
-  // Função para pegar uma imagem aleatória entre duas opções
-  const getRandomThinkingImage = () => {
-    return Math.random() > 0.5 ? jorgePensando : jorgePensando2;
-  };
-
-  const getRandomCountingImage = () => {
-    return Math.random() > 0.5 ? jorgeContando : jorgeContando2;
-  };
-
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -75,8 +127,22 @@ export default function HomePage({ navigation }: any) {
     },
   ]);
   const [inputValue, setInputValue] = useState("");
-  const [jorgeImage, setJorgeImage] = useState(getRandomThinkingImage());
+  const [jorgeImage, setJorgeImage] = useState<ImageSourcePropType>(getRandomThinkingImage);
+  const [isSending, setIsSending] = useState(false);
+  // Trava síncrona contra envio duplo (o estado só atualiza no próximo render)
+  const isSendingRef = useRef(false);
+  const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  const clearImageTimer = () => {
+    if (imageTimerRef.current) {
+      clearTimeout(imageTimerRef.current);
+      imageTimerRef.current = null;
+    }
+  };
+
+  // Limpa o timer da animação ao sair da tela
+  useEffect(() => clearImageTimer, []);
 
   // Handler para o botão de voltar do celular - fecha o app se estiver em Home
   useFocusEffect(
@@ -96,14 +162,28 @@ export default function HomePage({ navigation }: any) {
     }, [navigation])
   );
 
+  const addBotMessage = (text: string) => {
+    const botMessage: Message = {
+      id: `${Date.now()}-bot`,
+      text,
+      sender: "bot",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, botMessage]);
+  };
+
   // Função para enviar mensagem
-  const handleSendMessage = async() => {
-    if (inputValue.trim() === "") return;
+  const handleSendMessage = async () => {
+    if (inputValue.trim() === "" || isSendingRef.current) return;
+
+    isSendingRef.current = true;
+    setIsSending(true);
 
     // Fecha o keyboard
     Keyboard.dismiss();
 
-    // Muda para uma das imagens de pensando aleatoriamente
+    // Jorge fica pensando enquanto espera a resposta
+    clearImageTimer();
     setJorgeImage(getRandomThinkingImage());
 
     // Adiciona mensagem do usuário
@@ -118,56 +198,39 @@ export default function HomePage({ navigation }: any) {
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
 
-    // Timeline das mudanças de imagem
-    const timer1 = setTimeout(() => {
-      // Muda para uma das imagens de contando aleatoriamente
-      setJorgeImage(getRandomCountingImage());
-    }, 1000);
-
-    // Enviar mensagem ao webhook ou a fila de mensagem ao depender do status e receber resposta do bot
-    let msgResposta = "Hmm..."
-    
-    if (!isConnected) {
-      try{
-        await addToOfflineQueue(userMessage)
-        msgResposta = "Você está offline. Sua mensagem foi salva e será enviada quando a conexão for restabelecida."
-      } catch(error) {
-        msgResposta = "Tivemos problemas ao enviar sua mensagem para a fila OFFLINE. Reenvie quando estiver online."
-        console.log("Erro ao enviar mensagem a fila OFFLINE: ", error);
-      }
-      
-    } else {
-      try {
-        const response = await api.post(`/webhook/messages`, {
-          userMessage
-        })
-        if(response.status === 200) {
-          msgResposta = "Entendi sua mensagem. Solicitação processada!."
+    try {
+      if (!isConnected) {
+        // Sem conexão: guarda na fila offline para enviar quando a rede voltar
+        try {
+          await addToOfflineQueue(userMessage);
+          addBotMessage("Você está offline. Sua mensagem foi salva e será enviada quando a conexão for restabelecida.");
+        } catch (error) {
+          console.log("Erro ao enviar mensagem a fila OFFLINE: ", error);
+          addBotMessage("Tivemos problemas ao enviar sua mensagem para a fila OFFLINE. Reenvie quando estiver online.");
         }
-      } catch(error) {
-        msgResposta = "Desculpe, ocorreu um erro ao processar sua solicitação, contate o suporte."
-        console.log("Erro ao enviar mensagem ao webhook: ", error);
+        return;
       }
+
+      try {
+        const response = await api.post<WebhookSuccessResponse>(`/webhook/messages`, {
+          userMessage,
+        });
+        addBotMessage(buildSuccessReply(response.data ?? {}));
+
+        // Jorge "conta" o que registrou e depois volta ao normal
+        setJorgeImage(getRandomCountingImage());
+        imageTimerRef.current = setTimeout(() => {
+          imageTimerRef.current = null;
+          setJorgeImage(getRandomThinkingImage());
+        }, COUNTING_DURATION_MS);
+      } catch (error) {
+        console.log("Erro ao enviar mensagem ao webhook: ", error);
+        addBotMessage(getErrorReply(error));
+      }
+    } finally {
+      isSendingRef.current = false;
+      setIsSending(false);
     }
-
-    // Simula resposta do bot e volta para pensando após descansando
-    const timer3 = setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: msgResposta,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-
-      // Volta para uma das imagens de pensando aleatoriamente
-      setJorgeImage(getRandomThinkingImage());
-    }, 2000);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer3);
-    };
   };
 
   // Scroll automático para a última mensagem
@@ -175,7 +238,7 @@ export default function HomePage({ navigation }: any) {
     if (messages.length > 0) {
       flatListRef.current?.scrollToEnd({ animated: true });
     }
-  }, [messages]);
+  }, [messages, isSending]);
 
   const handleProfilePress = () => {
     navigation.navigate('Profile');
@@ -250,6 +313,17 @@ export default function HomePage({ navigation }: any) {
         contentContainerStyle={style.chatContainer}
         scrollEnabled={true}
         onEndReachedThreshold={0.1}
+        ListFooterComponent={
+          isSending ? (
+            <View style={[style.messageContainer, style.botMessageContainer]}>
+              <View style={[style.messageBubble, style.botBubble]}>
+                <Text style={[style.messageText, style.typingText]}>
+                  Jorge está digitando…
+                </Text>
+              </View>
+            </View>
+          ) : null
+        }
       />
 
       {/* Input Footer */}
@@ -265,8 +339,9 @@ export default function HomePage({ navigation }: any) {
             maxLength={500}
           />
           <TouchableOpacity
-            style={style.sendButton}
+            style={[style.sendButton, isSending && style.sendButtonDisabled]}
             onPress={handleSendMessage}
+            disabled={isSending}
           >
             <MaterialIcons name="send" size={20} color="#FFFFFF" />
           </TouchableOpacity>
