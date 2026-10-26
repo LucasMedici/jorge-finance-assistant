@@ -16,27 +16,14 @@ import { ptBR } from "date-fns/locale";
 import { style } from "./styles";
 import { themas } from "../../global/themes";
 import { api } from "../../services/api";
-
-type TransactionType = "gasto" | "receita" | "outro";
-
-// Item de GET /transactions (model `transaction` do backend)
-type Transaction = {
-  id: string;
-  type: string;
-  amount: number;
-  category?: string | null;
-  description?: string | null;
-  createdAt: string;
-};
-
-// Normaliza o tipo vindo da API (string livre gerada pela IA)
-const getEntryType = (entry: Transaction): TransactionType => {
-  const type = String(entry?.type ?? "").trim().toLowerCase();
-  if (type === "gasto" || type === "receita") return type;
-  return "outro";
-};
-
-const getEntryAmount = (entry: Transaction): number => Number(entry?.amount) || 0;
+import {
+  Transaction,
+  getChartDataByCategory,
+  getEntryAmount,
+  getEntryCategory,
+  getEntryType,
+  summarizeTransactions,
+} from "./summary";
 
 const formatCurrency = (value: number) =>
   value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -101,35 +88,9 @@ export default function ReportsPage() {
     fetchTransactions();
   }, [startDate, endDate]);
 
-  // Só gastos entram no total e no gráfico; receitas e "outro" ficam de fora
-  const expenses = entries.filter((entry) => getEntryType(entry) === "gasto");
-  const incomes = entries.filter((entry) => getEntryType(entry) === "receita");
-
-  // 🔥 Gera dados do gráfico dinamicamente
-  const getChartDataByCategory = () => {
-    const categoryMap = new Map<string, number>();
-
-    expenses.forEach((entry) => {
-      const category = entry.category || "Sem categoria";
-      const current = categoryMap.get(category) || 0;
-      categoryMap.set(category, current + getEntryAmount(entry));
-    });
-
-    const labels = Array.from(categoryMap.keys());
-    const data = Array.from(categoryMap.values());
-
-    return {
-      labels,
-      datasets: [{ data }],
-    };
-  };
-
-  const chartData = getChartDataByCategory();
-
-  // 🔥 CALCULA OS TOTAIS DO PERÍODO
-  const totalExpenses = expenses.reduce((sum, entry) => sum + getEntryAmount(entry), 0);
-  const totalIncome = incomes.reduce((sum, entry) => sum + getEntryAmount(entry), 0);
-  const balance = totalIncome - totalExpenses;
+  // Totais do período (só gastos entram no total e no gráfico) — ver ./summary.ts
+  const { expenses, totalExpenses, totalIncome, balance } = summarizeTransactions(entries);
+  const chartData = getChartDataByCategory(expenses);
 
   const handleStartDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowStartPicker(false);
@@ -285,7 +246,7 @@ export default function ReportsPage() {
               ]}
             >
               <View style={style.lastEntryInfo}>
-                <Text style={style.lastEntryText}>{entry.category || "Sem categoria"}</Text>
+                <Text style={style.lastEntryText}>{getEntryCategory(entry)}</Text>
                 <Text style={style.lastEntryDate}>
                   {type === "receita" ? "Receita" : type === "gasto" ? "Gasto" : "Outro"} ·{" "}
                   {format(new Date(entry.createdAt), "dd/MM/yyyy")}
