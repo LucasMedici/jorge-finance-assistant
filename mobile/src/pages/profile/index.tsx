@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -100,7 +100,7 @@ export default function ProfilePage({ navigation }: RootStackScreenProps<'Profil
   };
 
 
-  const handleGetUsername = async () => {
+  const handleGetUsername = useCallback(async () => {
      if (!user) return;
 
      try{
@@ -114,11 +114,11 @@ export default function ProfilePage({ navigation }: RootStackScreenProps<'Profil
     } catch (error) {
       return
     }
-  }
+  }, [user]);
 
   useEffect(() => {
     handleGetUsername();
-  }, [user?.id]);
+  }, [handleGetUsername]);
 
   return (
     <ScrollView style={style.container} showsVerticalScrollIndicator={false}>
