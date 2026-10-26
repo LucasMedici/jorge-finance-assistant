@@ -17,14 +17,15 @@ export default function App() {
   }
 
   return (
-    <ConnectionProvider>
-      <AuthProvider>
+    // AuthProvider por fora: o ConnectionProvider usa o user logado para enviar a fila offline
+    <AuthProvider>
+      <ConnectionProvider>
         <SafeAreaView style={{ flex: 1, backgroundColor: themas.colors.primary }}>
           <StatusBar backgroundColor={themas.colors.primary} />
           <Routes />
         </SafeAreaView>
-      </AuthProvider>
-    </ConnectionProvider>
+      </ConnectionProvider>
+    </AuthProvider>
     
   );
 }
