@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -44,8 +44,8 @@ export default function ReportsPage() {
   const [entries, setEntries] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🔥 FUNÇÃO QUE CHAMA SUA API
-  const fetchTransactions = async () => {
+  // 🔥 FUNÇÃO QUE CHAMA SUA API (recriada quando o período muda)
+  const fetchTransactions = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -62,9 +62,9 @@ export default function ReportsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [startDate, endDate]);
 
-  // 🔥 BUSCA QUANDO A PÁGINA ABRE
+  // 🔥 BUSCA AO ENTRAR NA TELA E QUANDO AS DATAS MUDAM (com a tela aberta)
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -80,13 +80,8 @@ export default function ReportsPage() {
       );
 
       return () => subscription.remove();
-    }, [])
+    }, [fetchTransactions])
   );
-
-  // 🔥 BUSCA QUANDO AS DATAS MUDAM
-  useEffect(() => {
-    fetchTransactions();
-  }, [startDate, endDate]);
 
   // Totais do período (só gastos entram no total e no gráfico) — ver ./summary.ts
   const { expenses, totalExpenses, totalIncome, balance } = summarizeTransactions(entries);
