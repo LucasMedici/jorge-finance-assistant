@@ -15,6 +15,7 @@ yarn dev                   # ts-node-dev com reload, porta = PORT do .env (padrÃ
 yarn build                 # prisma generate + tsc -> dist/
 yarn start                 # node dist/index.js (usado pelo Procfile)
 yarn test                  # Vitest + Supertest (tests/), Prisma e OpenAI mockados
+yarn lint                  # ESLint 9 (eslint.config.mjs, typescript-eslint); deve ficar com 0 erros/warnings
 npx tsc --noEmit           # checagem de tipos
 npx prisma migrate status  # estado das migrations no banco do .env (somente leitura)
 ```

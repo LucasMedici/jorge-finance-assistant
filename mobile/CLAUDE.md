@@ -15,6 +15,7 @@ npm install
 npm start                  # expo start (Expo Go / dev client)
 npm run android            # abre no Android
 npx tsc --noEmit           # checagem de tipos
+npm test                   # Jest (jest-expo): lógica dos relatórios, fila offline, token
 npx expo export --platform android        # gera o bundle (bom para checar assets/imports; apague dist/ depois)
 eas build -p android --profile preview    # gera o APK
 ```
@@ -56,10 +57,12 @@ Pontos importantes:
 - **Chat** (`pages/home`): mostra o que foi registrado ("Anotado ✅ Gasto de R$ 50,00 em mercado.") ou o `error`
   do 400 do backend; trava o botão enquanto envia.
 - **Fila offline** (`global/offlineQueue.ts`, chave `offlineQueue`): sem conexão a mensagem é guardada (com
-  `userPhone`) e reenviada depois — só os itens do usuário logado, sem execução em paralelo. O backend é
-  idempotente pelo `id` da mensagem.
+  `userPhone`) e reenviada depois — só os itens do usuário logado, sem execução em paralelo. Mensagens rejeitadas
+  pelo backend (4xx, exceto 401/408/429 e `OPENAI_*`) são descartadas; falhas transitórias mantêm o item e param
+  a fila (`getSendFailureAction`). O backend é idempotente pelo `id` da mensagem.
 - **Relatórios**: `GET /transactions` com `startDate`/`endDate` formatados com `date-fns` no fuso local
-  (nunca `toISOString()`); total e gráfico consideram só `gasto`; receitas e saldo aparecem à parte.
+  (nunca `toISOString()`); total e gráfico consideram só `gasto`; receitas e saldo aparecem à parte. Os cálculos
+  ficam em funções puras em `pages/reports/summary.ts` (testadas).
 
 ## Convenções
 
@@ -67,4 +70,5 @@ Pontos importantes:
   e `src/global/fonts.ts` (família Prompt), não hex/fontes soltos.
 - Cada tela em `src/pages/<nome>/` com `index.tsx` + `styles.ts`; props tipadas com os tipos de `src/routes/types.ts`.
 - Textos de interface em português.
+- Lógica testável vai em funções puras fora dos componentes, com testes em `__tests__/` ao lado.
 - Cada tela registra seu próprio handler do botão voltar do Android via `useFocusEffect`.
