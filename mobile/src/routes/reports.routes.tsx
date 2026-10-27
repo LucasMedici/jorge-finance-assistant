@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { themas } from '../global/themes';
 import CategoryDetailPage from '../pages/categoryDetail';
 import ReportsPage from '../pages/reports';
+import TransactionsPage from '../pages/transactions';
 import type { ReportsStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<ReportsStackParamList>();
@@ -18,6 +19,7 @@ export default function ReportsRoutes() {
     >
       <Stack.Screen name="Reports" component={ReportsPage} />
       <Stack.Screen name="CategoryDetail" component={CategoryDetailPage} />
+      <Stack.Screen name="Transactions" component={TransactionsPage} />
     </Stack.Navigator>
   );
 }
