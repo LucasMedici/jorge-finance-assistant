@@ -29,10 +29,18 @@ As duas pastas são projetos independentes (sem workspaces): cada uma tem seu `p
   - `id` (gerado no celular) torna o envio idempotente: `phone` + `messageId` é único, e um reenvio devolve a
     transação já gravada sem chamar a OpenAI.
   - `userPhone` é ignorado pelo backend, mas o app usa para saber de quem é cada item da fila offline.
-  - Respostas: **200** `{ valor, tipo, categoria, comentario }`; **400** `{ error, code }` quando a mensagem não vira
+  - Respostas: **200** `{ id, valor, tipo, categoria, comentario }` (`id` da transação gravada, também no reenvio); **400** `{ error, code }` quando a mensagem não vira
     transação (`code`: `NO_TRANSACTION`, `EMPTY_MESSAGE`, `MESSAGE_TOO_LONG`, `INVALID_JSON_RESPONSE`, `OPENAI_*`).
 - Relatórios: `GET /transactions?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`, datas no fuso de São Paulo (-03:00);
   `amount` é `Decimal(12,2)` no banco e número no JSON.
+- Categorias: lista fechada em `backend/src/services/chatService.ts` (`CATEGORIAS`), a mesma no prompt e no `enum`
+  do structured output. Transações antigas têm categorias em texto livre (minúsculas); compare sem caixa/acento.
+- Correção: `PATCH /transactions/:id` (opcionais `type`, `amount`, `category`, `description`, `createdAt` como
+  `YYYY-MM-DD`, que mantém o horário, ou ISO com fuso) → 200 com a transação; `DELETE /transactions/:id` → 204.
+  Transação inexistente ou de outro usuário → 404.
+- Perfil: `GET /user/:id` → `{ id, email, phone, name, createdAt, monthlyGoal }`; `PUT /user/:id` aceita
+  `{ name?, monthlyGoal? }` e só altera o que vier (`monthlyGoal: null` remove a meta). A meta mensal de gastos
+  vale para todos os meses; `monthlyGoal` também é `Decimal(12,2)` no banco e número (ou `null`) no JSON.
 - Transações pertencem ao usuário pelo `phone` (não há FK entre `user` e `transaction`).
 
 Ao mudar o contrato, altere `backend/` e `mobile/` juntos, de preferência no mesmo commit.

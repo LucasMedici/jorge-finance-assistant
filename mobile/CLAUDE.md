@@ -45,7 +45,9 @@ src/routes/types.ts           RootStackParamList, TabParamList, RootStackScreenP
 src/pages/<tela>/index.tsx    tela;  src/pages/<tela>/styles.ts  estilos (StyleSheet)
 src/context/AuthContext.tsx   sessão: user, loading, signIn(token), signOut(); valida o token no boot
 src/context/ConectionContext.tsx  NetInfo + dispara a fila offline (ao reconectar, logar ou restaurar a sessão)
-src/global/                   tema, fontes, isTokenValid, fila offline
+src/global/                   tema, fontes, formatCurrency, isTokenValid, fila offline
+src/components/               componentes base do v2 (barrel index.ts): JorgeAvatar, Sheet, Chip, SegmentedControl,
+                              Switch, PrimaryButton, TextButton, GoalBar, TabBar e ícones (react-native-svg)
 src/services/api.ts           axios: injeta o Bearer token; em 401 limpa o token e derruba a sessão
 src/assets/                   imagens do Jorge e ícone/splash (src/assets/app-icon)
 ```
@@ -68,7 +70,11 @@ Pontos importantes:
 ## Convenções
 
 - Cores e fontes sempre de `src/global/themes.tsx` (`themas.colors.primary` #31266C, `secondary` #8DC63E)
-  e `src/global/fonts.ts` (família Prompt), não hex/fontes soltos.
+  e `src/global/fonts.ts` (família Prompt), não hex/fontes soltos. O tema também tem os tokens do v2
+  (`surface`, `textDark`, `textMuted`, `fillLight`, `error`, `warning`, `categoryColors`, `spacing`, `radius`).
+- Redesign v2: telas de referência em `doc-images/v2/`. Jorge sempre estático (`JorgeAvatar`). Nas folhas brancas,
+  selecionado = verde `secondary` com texto `textDark`; botão principal roxo; nunca texto verde sobre branco.
+- Valores em reais com `formatCurrency` (`src/global/formatCurrency.ts`).
 - Cada tela em `src/pages/<nome>/` com `index.tsx` + `styles.ts`; props tipadas com os tipos de `src/routes/types.ts`.
 - Textos de interface em português.
 - Lógica testável vai em funções puras fora dos componentes, com testes em `__tests__/` ao lado.
