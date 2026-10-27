@@ -9,6 +9,12 @@ export const style = StyleSheet.create({
     flex: 1,
     backgroundColor: themas.colors.primary,
   },
+  // Fundo branco atrás do conteúdo: no Android, ao fechar o teclado o KeyboardAvoidingView às vezes deixa um
+  // espaço do tamanho da barra de navegação embaixo, que assim fica da cor da folha
+  keyboardArea: {
+    flex: 1,
+    backgroundColor: themas.colors.white,
+  },
 
   header: {
     flexDirection: 'row',
