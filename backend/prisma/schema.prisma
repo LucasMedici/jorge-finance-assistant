@@ -40,5 +40,8 @@ model user {
   password  String
   createdAt DateTime @default(now())
 
+  // Meta de gastos por mês (vale para todos os meses até ser mudada); null = sem meta.
+  monthlyGoal Decimal? @db.Decimal(12, 2)
+
   @@schema("assistent")
 }
