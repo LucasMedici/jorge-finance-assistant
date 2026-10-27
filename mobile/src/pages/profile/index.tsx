@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { style } from './styles';
 import { themas } from '../../global/themes';
@@ -22,6 +23,8 @@ import { getGreeting, getNameUpdateError, validateName } from './nameForm';
 import type { RootStackScreenProps } from '../../routes/types';
 
 export default function ProfilePage({ navigation }: RootStackScreenProps<'Profile'>) {
+  // O App só protege o topo: a folha branca vai até a borda e empurra o conteúdo acima da barra do Android
+  const insets = useSafeAreaInsets();
   // null = nome ainda não carregado (ou a busca falhou)
   const [userName, setUserName] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -159,7 +162,7 @@ export default function ProfilePage({ navigation }: RootStackScreenProps<'Profil
             </View>
           </View>
 
-          <View style={style.sheet}>
+          <View style={[style.sheet, { paddingBottom: 32 + insets.bottom }]}>
             {isEditing ? (
               <>
                 <FormField

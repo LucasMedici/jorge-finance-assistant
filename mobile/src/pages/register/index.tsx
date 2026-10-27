@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { style } from './styles';
 import { api } from '../../services/api';
 import { JorgeAvatar, PrimaryButton } from '../../components';
@@ -25,6 +26,8 @@ import {
 import type { RootStackScreenProps } from '../../routes/types';
 
 export default function RegisterPage({ navigation }: RootStackScreenProps<'Register'>) {
+  // O App só protege o topo: a folha branca vai até a borda e empurra o conteúdo acima da barra do Android
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [number, setNumber] = useState('');
@@ -111,7 +114,7 @@ export default function RegisterPage({ navigation }: RootStackScreenProps<'Regis
           </View>
         </View>
 
-        <View style={style.sheet}>
+        <View style={[style.sheet, { paddingBottom: 32 + insets.bottom }]}>
           <FormField
             label="E-mail"
             value={email}
