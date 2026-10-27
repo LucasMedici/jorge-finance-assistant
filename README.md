@@ -168,8 +168,10 @@ All routes except `/auth/*` and `/serverstatus` require `Authorization: Bearer <
 | `POST` | `/auth/login` | Log in — `{ email, password }` → `{ token }` |
 | `POST` | `/webhook/messages` | Send a message to Jorge and store the transaction |
 | `GET` | `/transactions?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` | Transactions in the period |
-| `GET` | `/user/:id` | Get a user profile |
-| `PUT` | `/user/:id` | Update the display name — `{ name }` |
+| `PATCH` | `/transactions/:id` | Fix a transaction — any of `{ type, amount, category, description, createdAt }` |
+| `DELETE` | `/transactions/:id` | Delete a transaction |
+| `GET` | `/user/:id` | Get a user profile (including the monthly spending goal) |
+| `PUT` | `/user/:id` | Update the display name and/or monthly spending goal — `{ name?, monthlyGoal? }` |
 | `GET` | `/serverstatus` | Health check (returns `on`) |
 
 **Example — sending a message**
@@ -190,9 +192,10 @@ Content-Type: application/json
 
 ```json
 {
+  "id": "3f0c2b9e-8a41-4d6e-9f57-1c2d3e4f5a6b",
   "valor": 50,
   "tipo": "gasto",
-  "categoria": "mercado",
+  "categoria": "Mercado",
   "comentario": ""
 }
 ```
