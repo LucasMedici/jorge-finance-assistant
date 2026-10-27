@@ -16,6 +16,11 @@ type GoalBarProps = {
   variant?: 'compact' | 'full';
   /** Dias até o fim do mês (só no `compact`). */
   daysLeft?: number;
+  /**
+   * Só no `full`: `false` esconde o "Restam R$ X"/"Meta atingida" (ex.: mês já fechado). Acima da meta,
+   * o valor excedido continua aparecendo.
+   */
+  showRemaining?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -26,6 +31,7 @@ export default function GoalBar({
   goal,
   variant = 'compact',
   daysLeft,
+  showRemaining = true,
   style,
 }: GoalBarProps) {
   const progress = getGoalProgress(spent, goal);
@@ -72,12 +78,14 @@ export default function GoalBar({
       ) : (
         <View style={styles.fullRow}>
           <Text style={styles.fullPercent}>{percentLabel}</Text>
-          <View style={styles.fullStatus}>
-            {progress.isOver && <AlertIcon size={16} color={themas.colors.warning} />}
-            <Text style={[styles.fullStatusText, progress.isOver && styles.warningText]}>
-              {statusLabel}
-            </Text>
-          </View>
+          {(showRemaining || progress.isOver) && (
+            <View style={styles.fullStatus}>
+              {progress.isOver && <AlertIcon size={16} color={themas.colors.warning} />}
+              <Text style={[styles.fullStatusText, progress.isOver && styles.warningText]}>
+                {statusLabel}
+              </Text>
+            </View>
+          )}
         </View>
       )}
     </View>
