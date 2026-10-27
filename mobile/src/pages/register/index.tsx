@@ -1,137 +1,190 @@
-import React, {useState} from "react";
-import {Text, View, Image, TextInput, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert, BackHandler} from "react-native";
+import React, { useRef, useState } from 'react';
+import {
+  Alert,
+  BackHandler,
+  Keyboard,
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { style } from "./styles";
-import { fonts } from "../../global/fonts";
-import { themas } from "../../global/themes";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { style } from './styles';
+import { api } from '../../services/api';
+import { JorgeAvatar, PrimaryButton } from '../../components';
+import FormField, { FieldMessage } from '../login/FormField';
+import {
+  getRegisterFailure,
+  hasFieldErrors,
+  validateRegisterForm,
+  type FieldErrors,
+  type RegisterField,
+} from '../login/formErrors';
+import type { RootStackScreenProps } from '../../routes/types';
 
-import jorgeAcenando from "../../assets/jorge_acenando.png";
-import { api } from "../../services/api";
-import type { RootStackScreenProps } from "../../routes/types";
-
-export default function RegisterPage({navigation}: RootStackScreenProps<'Register'>) {
+export default function RegisterPage({ navigation }: RootStackScreenProps<'Register'>) {
+  // O App só protege o topo: a folha branca vai até a borda e empurra o conteúdo acima da barra do Android
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [number, setNumber] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<RegisterField>>({});
+  const [generalError, setGeneralError] = useState<string | undefined>();
+  const [loading, setLoading] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
+  const phoneRef = useRef<TextInput>(null);
 
-  // Handler para o botão de voltar do celular - fecha o app
+  // Handler para o botão de voltar do celular - volta para o Login
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        BackHandler.exitApp();
+        navigation.navigate('Login');
         return true;
       };
 
-      const subscription = BackHandler.addEventListener(
-        'hardwareBackPress',
-        onBackPress,
-      );
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
       return () => subscription.remove();
-    }, [])
+    }, [navigation]),
   );
 
-  const handleRegister =  async () => {
+  const setters: Record<RegisterField, (value: string) => void> = {
+    email: setEmail,
+    password: setPassword,
+    phone: setNumber,
+  };
 
-    if(!email || !password || !number) {
-      Alert.alert(
-        "Campos obrigatórios", 
-        "Por favor, preencha todos os campos.",
-        [
-          { text: "OK" },
-        ]
-      )
-      return;
-    }
+  // Ao digitar de novo, o erro daquele campo some
+  const handleChange = (field: RegisterField, value: string) => {
+    setters[field](value);
+    setFieldErrors((errors) => ({ ...errors, [field]: undefined }));
+    setGeneralError(undefined);
+  };
 
-    try{
-      const response = await api.post(`/auth/signup`, {
-          email,
-          password,
-          phone: number
-        });
+  const handleRegister = async () => {
+    if (loading) return;
 
-        if (response.status === 201) {
-          navigation.navigate('Login');
-        }
+    const errors = validateRegisterForm({ email, password, phone: number });
+    setFieldErrors(errors);
+    setGeneralError(undefined);
+    if (hasFieldErrors(errors)) return;
+
+    Keyboard.dismiss();
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/signup', {
+        email: email.trim(),
+        password,
+        phone: number.trim(),
+      });
+
+      if (response.status === 201) {
+        Alert.alert('Conta criada', 'Agora é só entrar com seu e-mail e senha.');
+        navigation.navigate('Login');
+      }
     } catch (error) {
-      Alert.alert(
-        "Erro ao efetuar Registro", 
-        "Valide os dados e tente novamente.",
-        [
-          { text: "OK" },
-        ]
-      );
+      const failure = getRegisterFailure(error);
+      setFieldErrors(failure.fields);
+      setGeneralError(failure.general);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <KeyboardAvoidingView 
-      style={{flex: 1, backgroundColor: themas.colors.primary}}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={0}
-    >
-      <ScrollView 
-        style={{flex: 1, backgroundColor: themas.colors.primary}}
-        contentContainerStyle={style.scrollContainer}
+    <KeyboardAvoidingView style={style.keyboardArea} behavior="padding">
+      <ScrollView
+        style={style.container}
+        contentContainerStyle={style.scrollContent}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={true}
         keyboardShouldPersistTaps="handled"
+        bounces={false}
+        overScrollMode="never"
       >
-        <View style={style.header}>
-          <Image source={jorgeAcenando} resizeMode="contain" style={style.jorgeAcenandoLogo} />
-          <Text style={style.title}>Bem-Vindo!</Text>
-          <Text style={style.subtitle}>Efetue seu Cadastro</Text>
+        <View style={style.hero}>
+          <JorgeAvatar size={132} accessibilityLabel="Jorge acenando" />
+          <View style={style.heroText}>
+            <Text style={style.title} accessibilityRole="header">
+              Criar sua conta
+            </Text>
+            <Text style={style.subtitle}>Comece a anotar seus gastos com o Jorge.</Text>
+          </View>
         </View>
 
-        <View style={style.main}>
-          <Text style={style.inputTitle}>Digite seu E-mail:</Text>
-          <View style={style.inputBox}>
-            <TextInput
-              style={style.textInput}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none" 
-              selectionColor={themas.colors.primary}
-            />
+        <View style={[style.sheet, { paddingBottom: 32 + insets.bottom }]}>
+          <FormField
+            label="E-mail"
+            value={email}
+            onChangeText={(value) => handleChange('email', value)}
+            placeholder="voce@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            textContentType="emailAddress"
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            editable={!loading}
+            error={fieldErrors.email}
+          />
+
+          <FormField
+            inputRef={passwordRef}
+            label="Senha"
+            password
+            value={password}
+            onChangeText={(value) => handleChange('password', value)}
+            placeholder="Pelo menos 6 caracteres"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="new-password"
+            textContentType="newPassword"
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => phoneRef.current?.focus()}
+            editable={!loading}
+            error={fieldErrors.password}
+          />
+
+          <FormField
+            inputRef={phoneRef}
+            label="Telefone"
+            value={number}
+            onChangeText={(value) => handleChange('phone', value)}
+            placeholder="Só números, com DDD"
+            keyboardType="number-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+            returnKeyType="done"
+            onSubmitEditing={handleRegister}
+            editable={!loading}
+            error={fieldErrors.phone}
+          />
+
+          {generalError ? <FieldMessage message={generalError} /> : null}
+
+          <PrimaryButton
+            title="Criar conta"
+            onPress={handleRegister}
+            loading={loading}
+            style={style.submit}
+          />
+
+          <View style={style.footer}>
+            <Text style={style.footerText}>Já tem uma conta?</Text>
+            <Pressable
+              onPress={() => navigation.navigate('Login')}
+              accessibilityRole="link"
+              hitSlop={12}
+              disabled={loading}
+            >
+              <Text style={style.footerLink}>Entrar</Text>
+            </Pressable>
           </View>
-
-          <Text style={style.inputTitle}>Digite sua Senha:</Text>
-          <View style={style.inputBox}>
-            <TextInput
-              style={style.textInput}
-              value={password}
-              onChangeText={setPassword}
-              keyboardType="default"
-              secureTextEntry
-              autoCapitalize="none" 
-              selectionColor={themas.colors.primary}
-            />
-          </View>
-
-          <Text style={style.inputTitle}>Digite seu Telefone:</Text>
-          <View style={style.inputBox}>
-            <TextInput
-              style={style.textInput}
-              value={number}
-              onChangeText={setNumber}
-              keyboardType="number-pad"
-              autoCapitalize="none" 
-              selectionColor={themas.colors.primary}
-            />
-          </View>
-
-          <TouchableOpacity style={style.button} onPress={handleRegister}>
-            <Text style={style.textButton}>Cadastrar</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={style.footer}>
-          <Text style={style.subtitle}>Já tem uma conta?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={{fontFamily: fonts.regular, fontSize: 14, color: '#8DC63E'}}>Entrar agora</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

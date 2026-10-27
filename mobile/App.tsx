@@ -20,7 +20,7 @@ export default function App() {
     // AuthProvider por fora: o ConnectionProvider usa o user logado para enviar a fila offline
     <AuthProvider>
       <ConnectionProvider>
-        <SafeAreaView style={{ flex: 1, backgroundColor: themas.colors.primary }}>
+        <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: themas.colors.primary }}>
           <StatusBar backgroundColor={themas.colors.primary} />
           <Routes />
         </SafeAreaView>
