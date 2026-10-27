@@ -2,91 +2,75 @@ import { StyleSheet } from 'react-native';
 import { themas } from '../../global/themes';
 import { fonts } from '../../global/fonts';
 
+// Medidas do canvas (Login-v2-D-Folha): topo roxo com o Jorge e o título, formulário numa folha branca.
+// O Cadastro usa os mesmos estilos.
 export const style = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    gap: 30,
-    alignItems: 'center',
+  container: {
+    flex: 1,
     backgroundColor: themas.colors.primary,
-    paddingVertical: 40,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+
+  // Topo roxo: cresce e empurra o Jorge e o título para perto da folha
+  hero: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+    gap: 18,
+    paddingTop: themas.spacing.xxl,
+    paddingHorizontal: themas.spacing.xxl,
+    paddingBottom: 32,
+  },
+  heroText: {
+    gap: 4,
   },
   title: {
-    fontFamily: fonts.medium,
-    fontSize: 36,
-    color: '#FFFFFF',
+    fontFamily: fonts.bold,
+    fontSize: 32,
+    lineHeight: 38,
+    letterSpacing: -0.64,
+    color: themas.colors.white,
   },
   subtitle: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: '#8DC63E',
-  },
-  inputTitle: {
     fontFamily: fonts.medium,
     fontSize: 15,
-    color: '#8DC63E',
-    paddingTop: 20,
-    alignSelf: 'flex-start',
-    paddingLeft: 60,
+    lineHeight: 22,
+    color: themas.colors.secondary,
   },
-  header: {
-    alignItems: 'center',
-  },
-  main: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  textInput: {
-    backgroundColor: themas.colors.inputBackgroud,
-    width: '75%',
-    height: 50,
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.39,
-    shadowRadius: 8.3,
 
-    elevation: 13,
+  // Folha branca com o formulário
+  sheet: {
+    gap: themas.spacing.lg,
+    paddingTop: themas.spacing.xxxl,
+    paddingHorizontal: themas.spacing.xxl,
+    paddingBottom: 32,
+    borderTopLeftRadius: themas.radius.sheet,
+    borderTopRightRadius: themas.radius.sheet,
+    backgroundColor: themas.colors.white,
   },
-  button: {
-    width: '30%',
-    height: 50,
-    backgroundColor: themas.colors.secondary,
-    borderRadius: 15,
-    marginTop: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.39,
-    shadowRadius: 8.3,
-
-    elevation: 13,
-  },
-  textButton: {
-    fontFamily: fonts.medium,
-    fontSize: 25,
-    color: '#FFFFFF',
+  submit: {
+    marginTop: themas.spacing.sm,
   },
   footer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
+    gap: 6,
+    paddingTop: 6,
   },
-  jorgeAcenandoLogo: {
-    width: 200,
-    height: 200,
-    marginLeft: 30,
+  footerText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: themas.colors.textMuted,
+  },
+  footerLink: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    lineHeight: 20,
+    color: themas.colors.primary,
+    textDecorationLine: 'underline',
   },
 });
