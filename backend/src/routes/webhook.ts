@@ -31,6 +31,7 @@ function extractMessageId(body: WebhookBody): string | null {
 /** Resposta de sucesso a partir de uma transação já gravada (mesmo formato do processamento). */
 function responseFromTransaction(tx: transaction) {
   return {
+    id: tx.id,
     valor: Number(tx.amount),
     tipo: tx.type,
     categoria: tx.category ?? '',
@@ -47,6 +48,7 @@ function responseFromTransaction(tx: transaction) {
  *       Envia o texto para a IA e grava a transação no telefone do usuário do token.
  *       Idempotente por `userMessage.id`: se já existir transação desse usuário com o mesmo id
  *       (ex.: reenvio da fila offline), responde 200 com os dados dela sem chamar a IA de novo.
+ *       O `id` da resposta é o da transação gravada (para corrigir/apagar via `/transactions/{id}`).
  *     tags:
  *       - Webhook
  *     security:
@@ -84,6 +86,10 @@ function responseFromTransaction(tx: transaction) {
  *             schema:
  *               type: object
  *               properties:
+ *                 id:
+ *                   type: string
+ *                   format: uuid
+ *                   description: Id da transação gravada (o mesmo em reenvios com o mesmo `userMessage.id`)
  *                 valor:
  *                   type: number
  *                   example: 50
@@ -138,11 +144,10 @@ router.post('/messages', async (req: Request, res: Response) => {
     }
 
     const { valor, tipo, categoria, comentario } = messageProcessed;
-    // Mesmo arredondamento (2 casas) aplicado ao valor gravado.
-    const response = { valor: toMoney(valor).toNumber(), tipo, categoria, comentario };
 
+    let created: transaction;
     try {
-      await createTransaction({
+      created = await createTransaction({
         phone,
         type: tipo,
         amount: valor,
@@ -154,13 +159,17 @@ router.post('/messages', async (req: Request, res: Response) => {
       // Corrida: a mesma mensagem foi gravada por outra requisição entre a checagem e o create.
       if (messageId && isUniqueConstraintError(dbError)) {
         const existing = await findTransactionByMessageId(phone, messageId);
-        return res.status(200).json(existing ? responseFromTransaction(existing) : response);
+        if (existing) return res.status(200).json(responseFromTransaction(existing));
+        // Sem a transação não há `id` para devolver (ex.: apagada nesse meio-tempo): cai no 500.
       }
       console.error('Erro ao salvar no banco:', dbError);
       return res.status(500).json({ error: 'Erro interno do servidor' });
     }
 
-    return res.status(200).json(response);
+    // Mesmo arredondamento (2 casas) aplicado ao valor gravado.
+    return res
+      .status(200)
+      .json({ id: created.id, valor: toMoney(valor).toNumber(), tipo, categoria, comentario });
   } catch (error) {
     console.error('Erro no webhook:', error);
     return res.status(500).json({ error: 'Erro ao processar a mensagem' });

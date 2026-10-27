@@ -22,10 +22,11 @@ const myToken = `Bearer ${jwt.sign(
 )}`;
 
 const SUCCESS = { valor: 50, tipo: 'gasto', categoria: 'mercado', comentario: 'compras' };
+const NEW_TX_ID = '0b9f3c2e-7a1d-4c5e-9f8a-1b2c3d4e5f60';
 
 function storedTransaction(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'tx-1',
+    id: 'a3c1e2d4-5b6f-4a7b-8c9d-0e1f2a3b4c5d',
     phone: ME.phone,
     type: 'gasto',
     amount: new Prisma.Decimal('50.90'),
@@ -44,7 +45,12 @@ function send(body: object) {
 beforeEach(() => {
   vi.clearAllMocks();
   prismaMock.transaction.findUnique.mockResolvedValue(null);
-  prismaMock.transaction.create.mockResolvedValue({});
+  // O create devolve a linha gravada (com o id gerado pelo banco).
+  prismaMock.transaction.create.mockImplementation(async ({ data }) => ({
+    id: NEW_TX_ID,
+    createdAt: new Date('2026-10-20T15:00:00Z'),
+    ...data,
+  }));
 });
 
 describe('POST /webhook/messages — messageId (#6)', () => {
@@ -91,7 +97,13 @@ describe('POST /webhook/messages — messageId (#6)', () => {
     const res = await send({ userMessage: { id: '1730000000000', text: 'gastei 50,90 no mercado' } });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ valor: 50.9, tipo: 'gasto', categoria: 'mercado', comentario: 'compras' });
+    expect(res.body).toEqual({
+      id: storedTransaction().id,
+      valor: 50.9,
+      tipo: 'gasto',
+      categoria: 'mercado',
+      comentario: 'compras',
+    });
     expect(processUserMessageMock).not.toHaveBeenCalled();
     expect(prismaMock.transaction.create).not.toHaveBeenCalled();
   });
@@ -111,8 +123,29 @@ describe('POST /webhook/messages — messageId (#6)', () => {
     const res = await send({ userMessage: { id: '1730000000000', text: 'gastei 50 no mercado' } });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ valor: 50, tipo: 'gasto', categoria: 'mercado', comentario: 'compras' });
+    expect(res.body).toEqual({
+      id: storedTransaction().id,
+      valor: 50,
+      tipo: 'gasto',
+      categoria: 'mercado',
+      comentario: 'compras',
+    });
     expect(prismaMock.transaction.findUnique).toHaveBeenCalledTimes(2);
+  });
+
+  it('corrida no create (P2002) sem transação encontrada depois → 500 (não há id para devolver)', async () => {
+    processUserMessageMock.mockResolvedValue(SUCCESS);
+    prismaMock.transaction.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      })
+    );
+
+    const res = await send({ userMessage: { id: '1730000000000', text: 'gastei 50 no mercado' } });
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: expect.any(String) });
   });
 
   it('outros erros do banco continuam 500', async () => {
@@ -127,13 +160,26 @@ describe('POST /webhook/messages — messageId (#6)', () => {
 });
 
 describe('POST /webhook/messages — contrato de resposta', () => {
-  it('sucesso: 200 com { valor, tipo, categoria, comentario }', async () => {
+  it('sucesso: 200 com { id, valor, tipo, categoria, comentario } (#39)', async () => {
     processUserMessageMock.mockResolvedValue(SUCCESS);
 
     const res = await send({ userMessage: { id: '1', text: 'gastei 50 no mercado' } });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual(SUCCESS);
+    expect(res.body).toEqual({ id: NEW_TX_ID, ...SUCCESS });
+  });
+
+  it('reenvio do mesmo messageId devolve o mesmo id da transação (#39)', async () => {
+    processUserMessageMock.mockResolvedValue(SUCCESS);
+    const first = await send({ userMessage: { id: '1', text: 'gastei 50 no mercado' } });
+
+    const [{ data }] = prismaMock.transaction.create.mock.calls[0];
+    prismaMock.transaction.findUnique.mockResolvedValue({ id: NEW_TX_ID, createdAt: new Date(), ...data });
+    const again = await send({ userMessage: { id: '1', text: 'gastei 50 no mercado' } });
+
+    expect(again.status).toBe(200);
+    expect(again.body).toEqual(first.body);
+    expect(prismaMock.transaction.create).toHaveBeenCalledTimes(1);
   });
 
   it('erro de processamento: 400 com { error: comentário amigável, code }', async () => {
