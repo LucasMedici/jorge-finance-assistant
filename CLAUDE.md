@@ -34,7 +34,7 @@ As duas pastas são projetos independentes (sem workspaces): cada uma tem seu `p
 - Relatórios: `GET /transactions?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`, datas no fuso de São Paulo (-03:00);
   `amount` é `Decimal(12,2)` no banco e número no JSON.
 - Categorias: lista fechada em `backend/src/services/chatService.ts` (`CATEGORIAS`), a mesma no prompt e no `enum`
-  do structured output. Transações antigas têm categorias em texto livre (minúsculas); compare sem caixa/acento.
+  do structured output. As transações antigas (texto livre) foram convertidas para essa lista em 2026-10-27.
 - Correção: `PATCH /transactions/:id` (opcionais `type`, `amount`, `category`, `description`, `createdAt` como
   `YYYY-MM-DD`, que mantém o horário, ou ISO com fuso) → 200 com a transação; `DELETE /transactions/:id` → 204.
   Transação inexistente ou de outro usuário → 404.
