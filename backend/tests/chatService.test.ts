@@ -9,14 +9,21 @@ vi.mock('openai', () => ({
   },
 }));
 
-import { parseModelResponse, processUserMessage, sanitizeMessage } from '../src/services/chatService';
+import {
+  CATEGORIAS,
+  TODAS_CATEGORIAS,
+  normalizeCategoria,
+  parseModelResponse,
+  processUserMessage,
+  sanitizeMessage,
+} from '../src/services/chatService';
 
 function completionWith(message: { content: string | null; refusal?: string | null }) {
   return { choices: [{ message: { role: 'assistant', refusal: null, ...message } }] };
 }
 
 function modelJson(data: Record<string, unknown>) {
-  return JSON.stringify({ valor: 50, tipo: 'gasto', categoria: 'mercado', comentario: '', ...data });
+  return JSON.stringify({ valor: 50, tipo: 'gasto', categoria: 'Mercado', comentario: '', ...data });
 }
 
 beforeEach(() => {
@@ -62,11 +69,52 @@ describe('sanitizeMessage', () => {
   });
 });
 
+describe('categorias', () => {
+  it('as listas de gasto e receita terminam em "Outros"', () => {
+    expect(CATEGORIAS.gasto.at(-1)).toBe('Outros');
+    expect(CATEGORIAS.receita.at(-1)).toBe('Outros');
+  });
+
+  it('TODAS_CATEGORIAS junta as duas listas sem repetir', () => {
+    expect(new Set(TODAS_CATEGORIAS).size).toBe(TODAS_CATEGORIAS.length);
+    expect([...TODAS_CATEGORIAS].sort()).toEqual([...new Set([...CATEGORIAS.gasto, ...CATEGORIAS.receita])].sort());
+  });
+
+  it.each([
+    ['gasto', 'Mercado', 'Mercado'],
+    ['gasto', 'saude', 'Saúde'],
+    ['gasto', ' CONTAS DA CASA ', 'Contas da casa'],
+    ['gasto', 'Salário', 'Outros'],
+    ['gasto', 'supermercado', 'Outros'],
+    ['gasto', '', 'Outros'],
+    ['receita', 'freela', 'Freela'],
+    ['receita', 'Lazer', 'Outros'],
+  ] as const)('normalizeCategoria(%s, %j) → %s', (tipo, categoria, esperado) => {
+    expect(normalizeCategoria(tipo, categoria)).toBe(esperado);
+  });
+});
+
 describe('parseModelResponse', () => {
-  it('aceita uma resposta válida e apara categoria/comentário', () => {
+  it('aceita uma resposta válida, normaliza a categoria e apara o comentário', () => {
     expect(
       parseModelResponse(modelJson({ valor: 12.5, tipo: 'receita', categoria: ' salário ', comentario: ' extra ' }))
-    ).toEqual({ valor: 12.5, tipo: 'receita', categoria: 'salário', comentario: 'extra' });
+    ).toEqual({ valor: 12.5, tipo: 'receita', categoria: 'Salário', comentario: 'extra' });
+  });
+
+  it('categoria fora da lista do tipo vira "Outros"', () => {
+    expect(parseModelResponse(modelJson({ categoria: 'supermercado' }))).toMatchObject({ categoria: 'Outros' });
+    expect(parseModelResponse(modelJson({ tipo: 'receita', categoria: 'Mercado' }))).toMatchObject({
+      tipo: 'receita',
+      categoria: 'Outros',
+    });
+  });
+
+  it('sem transação a categoria continua "não identificado"', () => {
+    expect(parseModelResponse(modelJson({ tipo: 'outro' }))).toMatchObject({
+      error: 'NO_TRANSACTION',
+      categoria: 'não identificado',
+    });
+    expect(parseModelResponse('não é json')).toMatchObject({ categoria: 'não identificado' });
   });
 
   it.each([
@@ -130,7 +178,7 @@ describe('processUserMessage', () => {
 
     const result = await processUserMessage('gastei R$ 50 no mercado 🛒 https://nota.com/123');
 
-    expect(result).toEqual({ valor: 50, tipo: 'gasto', categoria: 'mercado', comentario: '' });
+    expect(result).toEqual({ valor: 50, tipo: 'gasto', categoria: 'Mercado', comentario: '' });
     expect(createMock).toHaveBeenCalledTimes(1);
 
     const params = createMock.mock.calls[0][0];
@@ -140,6 +188,23 @@ describe('processUserMessage', () => {
     expect(params.messages).toHaveLength(2);
     expect(params.messages[0].role).toBe('system');
     expect(params.messages[1]).toEqual({ role: 'user', content: 'gastei R$ 50 no mercado' });
+  });
+
+  it('fixa as categorias no enum do structured output e no prompt, na mesma chamada', async () => {
+    createMock.mockResolvedValue(completionWith({ content: modelJson({}) }));
+
+    await processUserMessage('gastei 50 no mercado');
+
+    expect(createMock).toHaveBeenCalledTimes(1);
+    const params = createMock.mock.calls[0][0];
+    const schema = params.response_format.json_schema;
+    expect(schema.strict).toBe(true);
+    expect(schema.schema.properties.categoria).toEqual({ type: 'string', enum: TODAS_CATEGORIAS });
+
+    const systemPrompt: string = params.messages[0].content;
+    for (const categoria of TODAS_CATEGORIAS) {
+      expect(systemPrompt).toContain(categoria);
+    }
   });
 
   it('recusa do modelo → OPENAI_REFUSAL', async () => {
