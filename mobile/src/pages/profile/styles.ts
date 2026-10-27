@@ -1,7 +1,9 @@
-import { StyleSheet } from "react-native";
-import { themas } from "../../global/themes";
-import { fonts } from "../../global/fonts";
+import { StyleSheet } from 'react-native';
+import { themas } from '../../global/themes';
+import { fonts } from '../../global/fonts';
 
+// Perfil no padrão v2: cabeçalho roxo (como em Lançamentos), o Jorge pequeno com a saudação
+// e as informações numa folha branca (mesmos campos/caixas das folhas do canvas).
 export const style = StyleSheet.create({
   container: {
     flex: 1,
@@ -9,151 +11,122 @@ export const style = StyleSheet.create({
   },
 
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: themas.spacing.xxs,
+    paddingTop: themas.spacing.md,
+    paddingLeft: themas.spacing.md,
+    paddingRight: themas.spacing.xl,
+  },
+  backButton: {
+    width: themas.minTouchSize,
+    height: themas.minTouchSize,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.6,
+  },
+  headerTitle: {
+    flex: 1,
+    fontFamily: fonts.semibold,
+    fontSize: 20,
+    lineHeight: 26,
+    color: themas.colors.white,
   },
 
-  headerTitle: {
+  scrollContent: {
+    flexGrow: 1,
+  },
+
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: themas.spacing.lg,
+    paddingTop: themas.spacing.xl,
+    paddingHorizontal: themas.spacing.xxl,
+    paddingBottom: themas.spacing.xxxl,
+  },
+  heroText: {
+    flex: 1,
+    gap: 2,
+  },
+  greeting: {
     fontFamily: fonts.bold,
     fontSize: 24,
-    color: "#FFFFFF",
+    lineHeight: 30,
+    letterSpacing: -0.24,
+    color: themas.colors.white,
   },
-
-  headerSubtitle: {
+  heroSubtitle: {
     fontFamily: fonts.regular,
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.6)",
-    marginTop: 2,
+    fontSize: 15,
+    lineHeight: 22,
+    color: themas.colors.onPrimaryMuted,
   },
 
-  profileContent: {
-    paddingHorizontal: 15,
-    paddingVertical: 20,
+  sheet: {
+    flexGrow: 1,
+    gap: themas.spacing.lg,
+    paddingTop: themas.spacing.xxxl,
+    paddingHorizontal: themas.spacing.xxl,
+    paddingBottom: 32,
+    borderTopLeftRadius: themas.radius.sheet,
+    borderTopRightRadius: themas.radius.sheet,
+    backgroundColor: themas.colors.white,
   },
 
-  avatarContainer: {
-    alignItems: "center",
-    marginBottom: 30,
+  // Caixa de informação (mesmo visual da linha de data do "Corrigir lançamento")
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: themas.spacing.md,
+    minHeight: 64,
+    paddingVertical: themas.spacing.md,
+    paddingHorizontal: themas.spacing.lg,
+    borderRadius: themas.radius.lg,
+    backgroundColor: themas.colors.fillLight,
   },
-
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(141, 198, 62, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: themas.colors.secondary,
+  infoRowWithAction: {
+    paddingRight: themas.spacing.xxs,
   },
-
-  card: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-
-  cardLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.6)",
-    marginBottom: 8,
-  },
-
-  cardValue: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: "#FFFFFF",
-  },
-
-  userName: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: themas.colors.secondary,
-    marginBottom: 12,
-  },
-
-  textInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: "#FFFFFF",
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(141, 198, 62, 0.3)",
-  },
-
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(141, 198, 62, 0.15)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-  },
-
-  editButtonText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: themas.colors.secondary,
-  },
-
-  buttonGroup: {
-    flexDirection: "row",
-    gap: 10,
-  },
-
-  button: {
+  infoText: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 8,
   },
-
-  buttonSave: {
-    backgroundColor: themas.colors.secondary,
-  },
-
-  buttonCancel: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-  },
-
-  buttonText: {
-    fontFamily: fonts.medium,
+  infoLabel: {
+    fontFamily: fonts.regular,
     fontSize: 12,
-    color: "#FFFFFF",
+    lineHeight: 16,
+    color: themas.colors.textMuted,
+  },
+  infoValue: {
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    lineHeight: 22,
+    color: themas.colors.textDark,
+  },
+  infoValueEmpty: {
+    color: themas.colors.textMuted,
+  },
+  editButton: {
+    minWidth: themas.minTouchSize,
+    minHeight: themas.minTouchSize,
+    paddingHorizontal: themas.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editButtonText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    lineHeight: 20,
+    color: themas.colors.primary,
   },
 
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: "#FF4444",
-    paddingVertical: 14,
-    borderRadius: 10,
-    marginTop: 20,
+  editActions: {
+    gap: themas.spacing.xs,
   },
 
-  logoutButtonText: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: "#FFFFFF",
+  logout: {
+    marginTop: themas.spacing.sm,
   },
 });

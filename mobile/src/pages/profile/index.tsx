@@ -1,118 +1,121 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
   Alert,
   BackHandler,
-} from "react-native";
+  Keyboard,
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { MaterialIcons } from "@expo/vector-icons";
-import { style } from "./styles";
-import { themas } from "../../global/themes";
-
-import { AuthContext } from "../../context/AuthContext";
-import { api } from "../../services/api";
-import type { RootStackScreenProps } from "../../routes/types";
+import Constants from 'expo-constants';
+import { style } from './styles';
+import { themas } from '../../global/themes';
+import { AuthContext } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import { JorgeAvatar, PrimaryButton, TextButton } from '../../components';
+import FormField from '../login/FormField';
+import { ArrowLeftIcon } from '../login/icons';
+import { getGreeting, getNameUpdateError, validateName } from './nameForm';
+import type { RootStackScreenProps } from '../../routes/types';
 
 export default function ProfilePage({ navigation }: RootStackScreenProps<'Profile'>) {
-  const [userName, setUserName] = useState("Usuário");
+  // null = nome ainda não carregado (ou a busca falhou)
+  const [userName, setUserName] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState(userName);
+  const [tempName, setTempName] = useState('');
+  const [nameError, setNameError] = useState<string | undefined>();
+  const [saving, setSaving] = useState(false);
 
-  const authContext = useContext(AuthContext);
-  const { user, signOut } = authContext!;
-
+  const { user, signOut } = useContext(AuthContext)!;
+  const appVersion = Constants.expoConfig?.version;
 
   // Handler para o botão de voltar do celular - volta para a tela anterior
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        // Volta para a tela anterior quando aperta voltar
         navigation.goBack();
         return true;
       };
 
-      const subscription = BackHandler.addEventListener(
-        'hardwareBackPress',
-        onBackPress,
-      );
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
       return () => subscription.remove();
-    }, [navigation])
+    }, [navigation]),
   );
 
   const handleSave = async () => {
-    if (tempName.trim() === "") {
-      Alert.alert("Erro", "O nome não pode estar vazio");
-      return;
-    }
+    if (saving || !user) return;
 
-    if (!user) return;
+    const error = validateName(tempName);
+    setNameError(error);
+    if (error) return;
 
-    try{
-      const response = await api.put(`/user/${user.id}`, {
-        name: tempName,
-      });
+    const name = tempName.trim();
+    Keyboard.dismiss();
+    setSaving(true);
+    try {
+      const response = await api.put(`/user/${user.id}`, { name });
 
       if (response.status === 200) {
-        setUserName(tempName);
+        setUserName(typeof response.data?.name === 'string' ? response.data.name : name);
         setIsEditing(false);
-        Alert.alert("Sucesso", "Nome atualizado com sucesso!");
       }
-
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível atualizar o nome");
+    } catch (requestError) {
+      setNameError(getNameUpdateError(requestError));
+    } finally {
+      setSaving(false);
     }
-  }
+  };
 
+  const handleEdit = () => {
+    setTempName(userName ?? '');
+    setNameError(undefined);
+    setIsEditing(true);
+  };
 
   const handleCancel = () => {
-    setTempName(userName);
+    setTempName(userName ?? '');
+    setNameError(undefined);
     setIsEditing(false);
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      "Confirmar Saída",
-      "Tem certeza de que deseja sair?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
+    Alert.alert('Confirmar Saída', 'Tem certeza de que deseja sair?', [
+      {
+        text: 'Cancelar',
+        style: 'cancel',
+      },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Limpa token + user; o stack volta para o Login e desmonta as telas logadas
+            await signOut();
+          } catch (error) {
+            Alert.alert('Erro', 'Não foi possível fazer logout');
+          }
         },
-        {
-          text: "Sair",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Limpa token + user; o stack volta para o Login e desmonta as telas logadas
-              await signOut();
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível fazer logout");
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
-
   const handleGetUsername = useCallback(async () => {
-     if (!user) return;
+    if (!user) return;
 
-     try{
+    try {
       const response = await api.get(`/user/${user.id}`);
 
       if (response.status === 200) {
-        setUserName(response.data.name);
-        setTempName(response.data.name);
+        const name = typeof response.data?.name === 'string' ? response.data.name : '';
+        setUserName(name);
+        setTempName(name);
       }
-
     } catch (error) {
-      return
+      return;
     }
   }, [user]);
 
@@ -120,105 +123,109 @@ export default function ProfilePage({ navigation }: RootStackScreenProps<'Profil
     handleGetUsername();
   }, [handleGetUsername]);
 
+  const nameLabel = userName === null ? '—' : userName.trim() || 'Sem nome';
+  const nameIsEmpty = !userName?.trim();
+
   return (
-    <ScrollView style={style.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
+    <View style={style.container}>
       <View style={style.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 15 }}>
-          <Text style={style.headerTitle}>Perfil</Text>
-          <Text style={style.headerSubtitle}>Gerencie suas informações</Text>
-        </View>
-      </View>
-
-      {/* Conteúdo do Perfil */}
-      <View style={style.profileContent}>
-        {/* Avatar */}
-        <View style={style.avatarContainer}>
-          <View style={style.avatar}>
-            <MaterialIcons name="person" size={50} color="#FFFFFF" />
-          </View>
-        </View>
-
-        {/* Card de Nome */}
-        <View style={style.card}>
-          <Text style={style.cardLabel}>Nome</Text>
-
-          {isEditing ? (
-            <>
-              <TextInput
-                style={style.textInput}
-                value={tempName}
-                onChangeText={setTempName}
-                placeholder="Digite seu nome"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
-              />
-
-              <View style={style.buttonGroup}>
-                <TouchableOpacity
-                  style={[style.button, style.buttonSave]}
-                  onPress={handleSave}
-                >
-                  <MaterialIcons name="check" size={20} color="#FFFFFF" />
-                  <Text style={style.buttonText}>Salvar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[style.button, style.buttonCancel]}
-                  onPress={handleCancel}
-                >
-                  <MaterialIcons name="close" size={20} color="#FFFFFF" />
-                  <Text style={style.buttonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={style.userName}>{userName}</Text>
-
-              <TouchableOpacity
-                style={style.editButton}
-                onPress={() => {
-                  setTempName(userName);
-                  setIsEditing(true);
-                }}
-              >
-                <MaterialIcons
-                  name="edit"
-                  size={18}
-                  color={themas.colors.secondary}
-                />
-                <Text style={style.editButtonText}>Editar Nome</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-
-        {/* Card de Email */}
-        <View style={style.card}>
-          <Text style={style.cardLabel}>Email</Text>
-          <Text style={style.cardValue}>{user?.email ?? ""}</Text>
-        </View>
-
-        {/* Card de Versão */}
-        <View style={style.card}>
-          <Text style={style.cardLabel}>Versão do App</Text>
-          <Text style={style.cardValue}>1.0.0</Text>
-        </View>
-
-        {/* Botão de Logout */}
-        <TouchableOpacity
-          style={style.logoutButton}
-          onPress={handleLogout}
+        <Pressable
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          style={({ pressed }) => [style.backButton, pressed && style.pressed]}
         >
-          <MaterialIcons name="logout" size={20} color="#FFFFFF" />
-          <Text style={style.logoutButtonText}>Sair da Conta</Text>
-        </TouchableOpacity>
+          <ArrowLeftIcon size={22} color={themas.colors.white} />
+        </Pressable>
+        <Text style={style.headerTitle} accessibilityRole="header">
+          Perfil
+        </Text>
       </View>
 
-      <View style={{ height: 80 }} />
-    </ScrollView>
+      <KeyboardAvoidingView style={style.container} behavior="padding">
+        <ScrollView
+          style={style.container}
+          contentContainerStyle={style.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+          overScrollMode="never"
+        >
+          <View style={style.hero}>
+            <JorgeAvatar size={64} accessibilityLabel={null} />
+            <View style={style.heroText}>
+              <Text style={style.greeting}>{getGreeting(userName)}</Text>
+              <Text style={style.heroSubtitle}>Gerencie suas informações</Text>
+            </View>
+          </View>
+
+          <View style={style.sheet}>
+            {isEditing ? (
+              <>
+                <FormField
+                  label="Nome"
+                  value={tempName}
+                  onChangeText={(value) => {
+                    setTempName(value);
+                    setNameError(undefined);
+                  }}
+                  placeholder="Digite seu nome"
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  textContentType="name"
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleSave}
+                  editable={!saving}
+                  error={nameError}
+                />
+                <View style={style.editActions}>
+                  <PrimaryButton title="Salvar" onPress={handleSave} loading={saving} />
+                  <TextButton title="Cancelar" onPress={handleCancel} disabled={saving} />
+                </View>
+              </>
+            ) : (
+              <View style={[style.infoRow, style.infoRowWithAction]}>
+                <View style={style.infoText}>
+                  <Text style={style.infoLabel}>Nome</Text>
+                  <Text style={[style.infoValue, nameIsEmpty && style.infoValueEmpty]}>
+                    {nameLabel}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={handleEdit}
+                  accessibilityRole="button"
+                  accessibilityLabel="Editar nome"
+                  style={({ pressed }) => [style.editButton, pressed && style.pressed]}
+                >
+                  <Text style={style.editButtonText}>Editar</Text>
+                </Pressable>
+              </View>
+            )}
+
+            <View style={style.infoRow}>
+              <View style={style.infoText}>
+                <Text style={style.infoLabel}>E-mail</Text>
+                <Text style={style.infoValue}>{user?.email ?? ''}</Text>
+              </View>
+            </View>
+
+            <View style={style.infoRow}>
+              <View style={style.infoText}>
+                <Text style={style.infoLabel}>Versão do app</Text>
+                <Text style={style.infoValue}>{appVersion ?? '—'}</Text>
+              </View>
+            </View>
+
+            <TextButton
+              title="Sair da conta"
+              variant="destructive"
+              onPress={handleLogout}
+              style={style.logout}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
