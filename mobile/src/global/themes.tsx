@@ -27,6 +27,11 @@ export const themas = {
     onPrimaryTrack: 'rgba(255, 255, 255, 0.12)', // trilho de barras de progresso
     onPrimaryDivider: 'rgba(255, 255, 255, 0.08)', // bordas e divisórias
     secondarySoft: 'rgba(141, 198, 62, 0.18)', // fundo do ícone da aba selecionada
+    secondaryBorder: 'rgba(141, 198, 62, 0.55)', // borda dos atalhos do chat
+    onPrimaryBorder: 'rgba(255, 255, 255, 0.28)', // borda de botão secundário (Corrigir)
+    onPrimaryFaint: 'rgba(255, 255, 255, 0.3)', // detalhe bem apagado (3º pontinho do "digitando")
+    shade: 'rgba(0, 0, 0, 0.12)', // faixa escurecida (resumo do mês no chat)
+    shadeStrong: 'rgba(0, 0, 0, 0.2)', // caixa escura dentro de um balão (cartão Confirmar, ícone do recibo)
 
     overlay: 'rgba(20, 14, 48, 0.62)', // fundo escurecido atrás das folhas
   },

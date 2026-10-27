@@ -1,206 +1,192 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ImageSourcePropType,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
   BackHandler,
+  FlatList,
   Keyboard,
-} from "react-native";
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { isAxiosError } from "axios";
-import { style } from "./styles";
-import { themas } from "../../global/themes";
-import jorgePensando2 from "../../assets/jorge_pensando2.png";
-import jorgePensando from "../../assets/jorge_pensando.png";
-import jorgeContando from "../../assets/jorge_contando.png";
-import jorgeContando2 from "../../assets/jorge_contando2.png";
-import { formatCurrency } from "../../global/formatCurrency";
-import { AuthContext } from "../../context/AuthContext";
-import { ConnectionContext } from "../../context/ConectionContext";
-import { api } from "../../services/api";
-import { addToOfflineQueue } from "../../global/offlineQueue";
-import type { TabScreenProps } from "../../routes/types";
+import { ArrowUpIcon, CorrectTransactionSheet, GoalSheet } from '../../components';
+import { AuthContext } from '../../context/AuthContext';
+import { ConnectionContext } from '../../context/ConectionContext';
+import { addToOfflineQueue } from '../../global/offlineQueue';
+import { themas } from '../../global/themes';
+import { useAverageMonthlySpending } from '../../hooks/useAverageMonthlySpending';
+import { useMonthlyGoal } from '../../hooks/useMonthlyGoal';
+import type { TabScreenProps } from '../../routes/types';
+import { api } from '../../services/api';
+import { getTransactions, type Transaction } from '../../services/transactions';
+import { getUser } from '../../services/user';
+import {
+  type ChatItem,
+  type WebhookSuccessResponse,
+  OFFLINE_QUEUED_MESSAGE,
+  OFFLINE_QUEUE_ERROR_MESSAGE,
+  applyCorrection,
+  applyDeletion,
+  buildSuccessReply,
+  confirmAll,
+  confirmItem,
+  getErrorReply,
+  getGreeting,
+  getJorgeStatus,
+  getProfileInitial,
+  hasPendingConfirmation,
+  transactionFromWebhook,
+} from './chat';
+import { Header, MonthSummary } from './ChatHeader';
+import { ConfirmCard, Receipt, TextBubble, TypingBubble } from './ChatItems';
+import {
+  type MonthSummary as MonthTotals,
+  type ShortcutKey,
+  PIX_PREFILL,
+  SHORTCUTS,
+  SHORTCUT_ERROR_REPLY,
+  SHORTCUT_OFFLINE_REPLY,
+  buildTodayReply,
+  buildWeekReply,
+  getDaysLeftInMonth,
+  getMonthRange,
+  getMonthSpentLabel,
+  getShortcutRange,
+  summarizeMonth,
+} from './summary';
+import { style } from './styles';
+import { useKeyboardOverlap } from './useKeyboardOverlap';
 
-interface Message {
+// Mensagem do usuário como vai para POST /webhook/messages (e para a fila offline)
+type UserMessage = {
   id: string;
   text: string;
-  sender: "user" | "bot";
+  sender: 'user';
   timestamp: Date;
-  userPhone?: string;
-}
-
-// Resposta de sucesso do POST /webhook/messages (200)
-interface WebhookSuccessResponse {
-  valor: number;
-  tipo: "gasto" | "receita";
-  categoria: string;
-  comentario: string;
-}
-
-// Resposta de erro do POST /webhook/messages (400)
-interface WebhookErrorResponse {
-  error?: unknown;
-  code?: string;
-}
-
-const GENERIC_ERROR_MESSAGE =
-  "Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.";
-
-// Tempo que o Jorge fica "contando" depois de registrar, antes de voltar ao normal
-const COUNTING_DURATION_MS = 1500;
-
-// Monta a resposta do Jorge a partir do que o backend registrou
-function buildSuccessReply(data: Partial<WebhookSuccessResponse>): string {
-  if (typeof data.valor !== "number" || !Number.isFinite(data.valor)) {
-    return "Anotado ✅";
-  }
-
-  const tipo = data.tipo === "receita" ? "Receita" : "Gasto";
-  const categoria = typeof data.categoria === "string" ? data.categoria.trim() : "";
-  const comentario = typeof data.comentario === "string" ? data.comentario.trim() : "";
-
-  let reply = `Anotado ✅ ${tipo} de ${formatCurrency(data.valor)}`;
-  reply += categoria ? ` em ${categoria}.` : ".";
-  if (comentario) {
-    reply += `\n📝 ${comentario}`;
-  }
-  return reply;
-}
-
-// Extrai a mensagem amigável de um erro 400; qualquer outro erro vira a mensagem genérica
-function getErrorReply(error: unknown): string {
-  if (isAxiosError<WebhookErrorResponse>(error) && error.response?.status === 400) {
-    const message = error.response.data?.error;
-    if (typeof message === "string" && message.trim() !== "") {
-      return message;
-    }
-  }
-  return GENERIC_ERROR_MESSAGE;
-}
-
-// Funções para pegar uma imagem aleatória entre duas opções
-const getRandomThinkingImage = (): ImageSourcePropType =>
-  Math.random() > 0.5 ? jorgePensando : jorgePensando2;
-
-const getRandomCountingImage = (): ImageSourcePropType =>
-  Math.random() > 0.5 ? jorgeContando : jorgeContando2;
+  userPhone: string;
+};
 
 export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
-  const authContext = useContext(AuthContext);
-  const { user } = authContext!;
-  const { isConnected } = useContext(ConnectionContext)
+  const { user } = useContext(AuthContext)!;
+  const { isConnected } = useContext(ConnectionContext);
+  const userId = user?.id;
+  const { goal, loading: goalLoading, error: goalError, save: saveGoal } = useMonthlyGoal();
 
-
-  // Função para obter mensagem de saudação baseada na hora
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    
-    if (hour >= 5 && hour < 12) {
-      return "Bom dia!";
-    } else if (hour >= 12 && hour < 18) {
-      return "Boa tarde!";
-    } else {
-      return "Boa noite!";
-    }
-  };
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: `Olá, sou o Jorge, seu assistente financeiro. Como posso ajudá-lo hoje?`,
-      sender: "bot",
-      timestamp: new Date(),
-    },
-  ]);
-  const [inputValue, setInputValue] = useState("");
-  const [jorgeImage, setJorgeImage] = useState<ImageSourcePropType>(getRandomThinkingImage);
-  const [isSending, setIsSending] = useState(false);
+  const [items, setItems] = useState<ChatItem[]>([{ kind: 'greeting', id: 'greeting' }]);
+  const [inputValue, setInputValue] = useState('');
+  // Esperando o webhook ou a conta de um atalho: trava envio e atalhos
+  const [busy, setBusy] = useState(false);
   // Trava síncrona contra envio duplo (o estado só atualiza no próximo render)
-  const isSendingRef = useRef(false);
-  const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const busyRef = useRef(false);
+  const itemCounter = useRef(0);
 
-  const clearImageTimer = () => {
-    if (imageTimerRef.current) {
-      clearTimeout(imageTimerRef.current);
-      imageTimerRef.current = null;
+  const [userName, setUserName] = useState<string | null>(null);
+  const [totals, setTotals] = useState<MonthTotals | null>(null);
+  // Data de referência do resumo e dos recibos; atualizada ao focar e a cada recarga do resumo
+  const [now, setNow] = useState(() => new Date());
+  const summaryRequest = useRef(0);
+
+  const [correcting, setCorrecting] = useState<Transaction | null>(null);
+  const [correctionVisible, setCorrectionVisible] = useState(false);
+  const [goalSheetVisible, setGoalSheetVisible] = useState(false);
+  const averageSpending = useAverageMonthlySpending(goalSheetVisible);
+
+  const containerRef = useRef<View>(null);
+  const listRef = useRef<FlatList<ChatItem>>(null);
+  const inputRef = useRef<TextInput>(null);
+  const keyboardOverlap = useKeyboardOverlap(containerRef);
+  const keyboardOpen = keyboardOverlap > 0;
+
+  const nextItemId = (suffix: string) => `${Date.now()}-${++itemCounter.current}-${suffix}`;
+
+  const addItem = (item: ChatItem) => setItems((prev) => [...prev, item]);
+  const addBotMessage = (text: string) =>
+    addItem({ kind: 'text', id: nextItemId('bot'), sender: 'bot', text });
+
+  // Gastos do mês e de hoje (GET /transactions do dia 1º até hoje). Em erro, mantém os últimos valores.
+  const loadSummary = useCallback(async () => {
+    const request = ++summaryRequest.current;
+    const current = new Date();
+    setNow(current);
+    try {
+      const { start, end } = getMonthRange(current);
+      const transactions = await getTransactions(start, end);
+      if (request === summaryRequest.current) setTotals(summarizeMonth(transactions, current));
+    } catch (error) {
+      console.log('Erro ao carregar o resumo do mês: ', error);
     }
-  };
+  }, []);
 
-  // Limpa o timer da animação ao sair da tela
-  useEffect(() => clearImageTimer, []);
+  // Nome para a saudação e a inicial do perfil (pode ter mudado no Perfil)
+  const loadUserName = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const profile = await getUser(userId);
+      setUserName(profile.name);
+    } catch (error) {
+      console.log('Erro ao carregar o nome do usuário: ', error);
+    }
+  }, [userId]);
 
-  // Handler para o botão de voltar do celular - fecha o app se estiver em Home
   useFocusEffect(
-    React.useCallback(() => {
-      const onBackPress = () => {
-        // Fecha o app quando está na Home
+    useCallback(() => {
+      loadSummary();
+      loadUserName();
+
+      // Botão voltar do Android: na Home, fecha o app (as folhas abertas tratam o voltar antes)
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
         BackHandler.exitApp();
         return true;
-      };
-
-      const subscription = BackHandler.addEventListener(
-        'hardwareBackPress',
-        onBackPress,
-      );
-
+      });
       return () => subscription.remove();
-    }, [])
+    }, [loadSummary, loadUserName]),
   );
 
-  const addBotMessage = (text: string) => {
-    const botMessage: Message = {
-      id: `${Date.now()}-bot`,
-      text,
-      sender: "bot",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, botMessage]);
+  // Teclado abriu: a lista encolhe, mantém a última mensagem à vista
+  useEffect(() => {
+    if (keyboardOpen) listRef.current?.scrollToEnd({ animated: true });
+  }, [keyboardOpen]);
+
+  const lock = () => {
+    busyRef.current = true;
+    setBusy(true);
+  };
+  const unlock = () => {
+    busyRef.current = false;
+    setBusy(false);
   };
 
-  // Função para enviar mensagem
+  // Mensagem nova do usuário: cartões ainda abertos viram recibo (o lançamento já está salvo)
+  const addUserText = (text: string, id = nextItemId('user')) =>
+    setItems((prev) => [...confirmAll(prev), { kind: 'text', id, sender: 'user', text }]);
+
   const handleSendMessage = async () => {
-    if (inputValue.trim() === "" || isSendingRef.current) return;
+    if (inputValue.trim() === '' || busyRef.current) return;
 
-    isSendingRef.current = true;
-    setIsSending(true);
-
-    // Fecha o keyboard
+    lock();
     Keyboard.dismiss();
 
-    // Jorge fica pensando enquanto espera a resposta
-    clearImageTimer();
-    setJorgeImage(getRandomThinkingImage());
-
-    // Adiciona mensagem do usuário
-    const userMessage: Message = {
+    const userMessage: UserMessage = {
       id: Date.now().toString(),
       text: inputValue,
-      sender: "user",
+      sender: 'user',
       timestamp: new Date(),
-      userPhone: user?.phone || "unknown",
+      userPhone: user?.phone || 'unknown',
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
+    addUserText(userMessage.text, userMessage.id);
+    setInputValue('');
 
     try {
       if (!isConnected) {
         // Sem conexão: guarda na fila offline para enviar quando a rede voltar
         try {
           await addToOfflineQueue(userMessage);
-          addBotMessage("Você está offline. Sua mensagem foi salva e será enviada quando a conexão for restabelecida.");
+          addBotMessage(OFFLINE_QUEUED_MESSAGE);
         } catch (error) {
-          console.log("Erro ao enviar mensagem a fila OFFLINE: ", error);
-          addBotMessage("Tivemos problemas ao enviar sua mensagem para a fila OFFLINE. Reenvie quando estiver online.");
+          console.log('Erro ao enviar mensagem a fila OFFLINE: ', error);
+          addBotMessage(OFFLINE_QUEUE_ERROR_MESSAGE);
         }
         return;
       }
@@ -209,141 +195,221 @@ export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
         const response = await api.post<WebhookSuccessResponse>(`/webhook/messages`, {
           userMessage,
         });
-        addBotMessage(buildSuccessReply(response.data ?? {}));
-
-        // Jorge "conta" o que registrou e depois volta ao normal
-        setJorgeImage(getRandomCountingImage());
-        imageTimerRef.current = setTimeout(() => {
-          imageTimerRef.current = null;
-          setJorgeImage(getRandomThinkingImage());
-        }, COUNTING_DURATION_MS);
+        const transaction = transactionFromWebhook(response.data, {
+          phone: user?.phone ?? '',
+          messageId: userMessage.id,
+          now: new Date(),
+        });
+        if (transaction) {
+          addItem({ kind: 'transaction', id: nextItemId('tx'), transaction, confirmed: false });
+        } else {
+          addBotMessage(buildSuccessReply(response.data));
+        }
+        loadSummary();
       } catch (error) {
-        console.log("Erro ao enviar mensagem ao webhook: ", error);
+        console.log('Erro ao enviar mensagem ao webhook: ', error);
         addBotMessage(getErrorReply(error));
       }
     } finally {
-      isSendingRef.current = false;
-      setIsSending(false);
+      unlock();
     }
   };
 
-  // Scroll automático para a última mensagem
-  useEffect(() => {
-    if (messages.length > 0) {
-      flatListRef.current?.scrollToEnd({ animated: true });
+  // Atalhos: "Recebi um pix" só preenche o campo; os outros respondem com conta feita no app
+  const handleShortcut = async (key: ShortcutKey, label: string) => {
+    if (key === 'pix') {
+      setInputValue(PIX_PREFILL);
+      requestAnimationFrame(() => inputRef.current?.focus());
+      return;
     }
-  }, [messages, isSending]);
+    if (busyRef.current) return;
 
-  const handleProfilePress = () => {
-    navigation.navigate('Profile');
+    lock();
+    Keyboard.dismiss();
+    addUserText(label);
+
+    try {
+      if (!isConnected) {
+        addBotMessage(SHORTCUT_OFFLINE_REPLY);
+        return;
+      }
+      const current = new Date();
+      const { start, end } = getShortcutRange(key, current);
+      const transactions = await getTransactions(start, end);
+      addBotMessage(
+        key === 'today'
+          ? buildTodayReply(transactions, current)
+          : buildWeekReply(transactions, current),
+      );
+    } catch (error) {
+      console.log('Erro ao calcular atalho: ', error);
+      addBotMessage(SHORTCUT_ERROR_REPLY);
+    } finally {
+      unlock();
+    }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
-    const isUser = item.sender === "user";
-
-    // mensagens do chat
-    return (
-      <View
-        style={[
-          style.messageContainer,
-          isUser ? style.userMessageContainer : style.botMessageContainer,
-        ]}
-      >
-        <View
-          style={[
-            style.messageBubble,
-            isUser ? style.userBubble : style.botBubble,
-          ]}
-        >
-          <Text
-            style={[
-              style.messageText,
-              isUser ? style.userMessageText : style.botMessageText,
-            ]}
-          >
-            {item.text}
-          </Text>
-        </View>
-      </View>
-    )
+  const openCorrection = (transaction: Transaction) => {
+    Keyboard.dismiss();
+    setCorrecting(transaction);
+    setCorrectionVisible(true);
   };
+
+  const handleCorrectionSaved = (transaction: Transaction) => {
+    setItems((prev) => applyCorrection(prev, transaction));
+    setCorrectionVisible(false);
+    loadSummary();
+  };
+
+  const handleCorrectionDeleted = (id: string) => {
+    setItems((prev) => applyDeletion(prev, id));
+    setCorrectionVisible(false);
+    loadSummary();
+  };
+
+  const renderItem = ({ item }: { item: ChatItem }) => {
+    switch (item.kind) {
+      case 'greeting':
+        return <TextBubble sender="bot" text={getGreeting(now, userName)} />;
+      case 'text':
+        return <TextBubble sender={item.sender} text={item.text} />;
+      case 'transaction':
+        return item.confirmed ? (
+          <Receipt
+            transaction={item.transaction}
+            now={now}
+            onPress={() => openCorrection(item.transaction)}
+          />
+        ) : (
+          <ConfirmCard
+            transaction={item.transaction}
+            now={now}
+            onConfirm={() => setItems((prev) => confirmItem(prev, item.id))}
+            onCorrect={() => openCorrection(item.transaction)}
+          />
+        );
+    }
+  };
+
+  const status = getJorgeStatus({
+    busy,
+    awaitingConfirmation: hasPendingConfirmation(items),
+    isConnected,
+  });
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: themas.colors.primary }}
-      behavior={Platform.OS === "ios" ? "padding" : "padding"}
-      keyboardVerticalOffset={0}
+    <View
+      ref={containerRef}
+      collapsable={false}
+      style={[style.container, { paddingBottom: keyboardOverlap }]}
     >
-      {/* Header com título e ícone de perfil */}
-      <View style={style.topHeader}>
-        <View style={style.headerTitleContainer}>
-          <Text style={style.headerTitle}>Chat</Text>
-          <Text style={style.headerSubtitle}>Fale com o Jorge</Text>
-        </View>
-        <Pressable
-          style={style.profileIconButton}
-          onPress={handleProfilePress}
-        >
-          <MaterialIcons name="person" size={28} color="#FFFFFF" />
-        </Pressable>
-      </View>
-
-      {/* Bot Info Section */}
-      <View style={style.botInfoSection}>
-        <Image
-          source={jorgeImage}
-          resizeMode="contain"
-          style={style.botImage}
-        />
-        <Text style={style.botTitle}>{getGreeting()}</Text>
-      </View>
-
-      {/* Chat Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={style.chatContainer}
-        scrollEnabled={true}
-        onEndReachedThreshold={0.1}
-        ListFooterComponent={
-          isSending ? (
-            <View style={[style.messageContainer, style.botMessageContainer]}>
-              <View style={[style.messageBubble, style.botBubble]}>
-                <Text style={[style.messageText, style.typingText]}>
-                  Jorge está digitando…
-                </Text>
-              </View>
-            </View>
-          ) : null
-        }
+      <Header
+        status={status}
+        profileInitial={getProfileInitial(userName, user?.email)}
+        onProfilePress={() => navigation.navigate('Profile')}
       />
 
-      {/* Input Footer */}
-      <View style={style.inputFooter}>
+      {/* Com o teclado aberto o resumo sai, para sobrar espaço para a conversa */}
+      {!keyboardOpen && (
+        <MonthSummary
+          monthLabel={getMonthSpentLabel(now)}
+          monthSpent={totals?.monthSpent ?? null}
+          todaySpent={totals?.todaySpent ?? null}
+          goal={goal}
+          showGoalInvite={!goalLoading && !goalError && goal === null && totals !== null}
+          daysLeft={getDaysLeftInMonth(now)}
+          onGoalPress={() => setGoalSheetVisible(true)}
+        />
+      )}
+
+      <FlatList
+        ref={listRef}
+        style={style.list}
+        data={items}
+        extraData={[now, userName]}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={style.listContent}
+        ListHeaderComponent={<Text style={style.dayLabel}>Hoje</Text>}
+        ListFooterComponent={busy ? <TypingBubble /> : null}
+        keyboardShouldPersistTaps="handled"
+        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+      />
+
+      <ScrollView
+        horizontal
+        style={style.shortcuts}
+        contentContainerStyle={style.shortcutsContent}
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {SHORTCUTS.map(({ key, label }) => {
+          const disabled = busy && key !== 'pix';
+          return (
+            <Pressable
+              key={key}
+              onPress={() => handleShortcut(key, label)}
+              disabled={disabled}
+              accessibilityRole="button"
+              accessibilityState={{ disabled }}
+              hitSlop={4}
+              style={({ pressed }) => [
+                style.shortcut,
+                pressed && style.pressed,
+                disabled && style.disabled,
+              ]}
+            >
+              <Text style={style.shortcutText}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <View style={style.composer}>
         <View style={style.inputBox}>
           <TextInput
-            style={style.textInput}
-            placeholder="Digite sua mensagem..."
-            placeholderTextColor="#999"
+            ref={inputRef}
+            style={style.input}
+            placeholder="Conta pro Jorge…"
+            placeholderTextColor={themas.colors.controlOff}
+            accessibilityLabel="Mensagem para o Jorge"
             value={inputValue}
             onChangeText={setInputValue}
             multiline
             maxLength={500}
           />
-          <TouchableOpacity
-            style={[style.sendButton, isSending && style.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={isSending}
-          >
-            <MaterialIcons name="send" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
+        <Pressable
+          onPress={handleSendMessage}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar"
+          accessibilityState={{ disabled: busy }}
+          style={({ pressed }) => [
+            style.sendButton,
+            pressed && style.pressed,
+            busy && style.disabled,
+          ]}
+        >
+          <ArrowUpIcon size={22} color={themas.colors.textDark} />
+        </Pressable>
       </View>
 
-      {/* Espaço reservado para Tab Bar */}
-      <View style={style.tabBarSpace} />
-    </KeyboardAvoidingView>
+      <CorrectTransactionSheet
+        visible={correctionVisible}
+        transaction={correcting}
+        onClose={() => setCorrectionVisible(false)}
+        onSaved={handleCorrectionSaved}
+        onDeleted={handleCorrectionDeleted}
+      />
+
+      <GoalSheet
+        visible={goalSheetVisible}
+        onClose={() => setGoalSheetVisible(false)}
+        currentGoal={goal}
+        averageSpending={averageSpending}
+        onSave={saveGoal}
+      />
+    </View>
   );
 }
