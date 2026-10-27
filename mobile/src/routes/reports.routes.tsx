@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { themas } from '../global/themes';
+import CategoryDetailPage from '../pages/categoryDetail';
 import ReportsPage from '../pages/reports';
 import type { ReportsStackParamList } from './types';
 
@@ -16,6 +17,7 @@ export default function ReportsRoutes() {
       }}
     >
       <Stack.Screen name="Reports" component={ReportsPage} />
+      <Stack.Screen name="CategoryDetail" component={CategoryDetailPage} />
     </Stack.Navigator>
   );
 }
