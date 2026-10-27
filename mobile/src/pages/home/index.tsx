@@ -22,6 +22,7 @@ import jorgePensando2 from "../../assets/jorge_pensando2.png";
 import jorgePensando from "../../assets/jorge_pensando.png";
 import jorgeContando from "../../assets/jorge_contando.png";
 import jorgeContando2 from "../../assets/jorge_contando2.png";
+import { formatCurrency } from "../../global/formatCurrency";
 import { AuthContext } from "../../context/AuthContext";
 import { ConnectionContext } from "../../context/ConectionContext";
 import { api } from "../../services/api";
@@ -55,14 +56,6 @@ const GENERIC_ERROR_MESSAGE =
 
 // Tempo que o Jorge fica "contando" depois de registrar, antes de voltar ao normal
 const COUNTING_DURATION_MS = 1500;
-
-// Formata um valor em reais no padrão pt-BR (ex.: 1200 -> "R$ 1.200,00").
-// Feito à mão para não depender do suporte a Intl do Hermes.
-function formatCurrency(value: number): string {
-  const [integerPart, decimalPart] = Math.abs(value).toFixed(2).split(".");
-  const withThousands = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `${value < 0 ? "-" : ""}R$ ${withThousands},${decimalPart}`;
-}
 
 // Monta a resposta do Jorge a partir do que o backend registrou
 function buildSuccessReply(data: Partial<WebhookSuccessResponse>): string {
