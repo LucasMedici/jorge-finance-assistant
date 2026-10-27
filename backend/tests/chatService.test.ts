@@ -83,7 +83,9 @@ describe('categorias', () => {
   it.each([
     ['gasto', 'Mercado', 'Mercado'],
     ['gasto', 'saude', 'Saúde'],
-    ['gasto', ' CONTAS DA CASA ', 'Contas da casa'],
+    ['gasto', ' BEBIDA E ROLE ', 'Bebida e rolê'],
+    ['gasto', 'mercadinho', 'Mercadinho'],
+    ['gasto', 'familia e amigos', 'Família e amigos'],
     ['gasto', 'Salário', 'Outros'],
     ['gasto', 'supermercado', 'Outros'],
     ['gasto', '', 'Outros'],

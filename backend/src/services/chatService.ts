@@ -12,13 +12,44 @@ const MAX_MESSAGE_LENGTH = 150;
  * structured output (mesma chamada à OpenAI). Exportada para ser reaproveitada (ex.: filtros e correção no app).
  */
 export const CATEGORIAS = {
-  gasto: ['Mercado', 'Restaurante', 'Transporte', 'Contas da casa', 'Saúde', 'Lazer', 'Compras', 'Outros'],
+  gasto: [
+    'Mercado',
+    'Mercadinho',
+    'Comer fora',
+    'Transporte',
+    'Saúde',
+    'Lazer',
+    'Bebida e rolê',
+    'Família e amigos',
+    'Compras',
+    'Cuidados pessoais',
+    'Apostas',
+    'Outros',
+  ],
   receita: ['Salário', 'Freela', 'Outros'],
 } as const;
 
 export type CategoriaGasto = (typeof CATEGORIAS.gasto)[number];
 export type CategoriaReceita = (typeof CATEGORIAS.receita)[number];
 export type Categoria = CategoriaGasto | CategoriaReceita;
+
+/**
+ * Exemplos do que entra em cada categoria de gasto (tirados do histórico real), para o modelo escolher bem.
+ * Vão no mesmo prompt: algumas dezenas de tokens a mais, nenhuma chamada extra.
+ */
+const EXEMPLOS_GASTO: Record<Exclude<CategoriaGasto, 'Outros'>, string> = {
+  Mercado: 'mercado, supermercado, padaria, compra do mês',
+  Mercadinho: 'só quando a mensagem disser "mercadinho"',
+  'Comer fora': 'restaurante, lanche, pastel, hambúrguer, iFood, delivery, sorvete, café',
+  Transporte: 'uber, 99, passagem, metrô, ônibus, gasolina, patinete',
+  Saúde: 'farmácia, remédio, dentista, médico',
+  Lazer: 'cinema, futebol, jogo, ingresso, passeio',
+  'Bebida e rolê': 'bebida, cerveja, adega, balada, festa',
+  'Família e amigos': 'dinheiro ou presente para mãe, parente ou amigo (nome de pessoa)',
+  Compras: 'loja, roupa, Shopee, Americanas, eletrônicos',
+  'Cuidados pessoais': 'cabelo, barbeiro, perfumaria',
+  Apostas: 'aposta, bet, rifa',
+};
 
 /** Categoria usada quando o modelo devolve algo que não pertence à lista do tipo. */
 export const CATEGORIA_OUTROS = 'Outros' satisfies Categoria;
@@ -40,6 +71,9 @@ Campos:
 - "tipo": "gasto" se indicar despesa (gastei, paguei, comprei); "receita" se indicar entrada (recebi, ganhei, vendi); "outro" se não for nenhum dos dois.
 - "categoria": exatamente uma da lista do tipo; use "Outros" se nenhuma se encaixar.
   - gasto: ${CATEGORIAS.gasto.join(', ')}.
+${Object.entries(EXEMPLOS_GASTO)
+  .map(([categoria, exemplos]) => `    - ${categoria}: ${exemplos}.`)
+  .join('\n')}
   - receita: ${CATEGORIAS.receita.join(', ')}.
 - "comentario": apenas o que sobrar da mensagem original, sem inferir nada; vazio se não houver.
 `;
