@@ -145,7 +145,7 @@ export default function ProfilePage({ navigation }: RootStackScreenProps<'Profil
         </Text>
       </View>
 
-      <KeyboardAvoidingView style={style.container} behavior="padding">
+      <KeyboardAvoidingView style={style.keyboardArea} behavior="padding">
         <ScrollView
           style={style.container}
           contentContainerStyle={style.scrollContent}
