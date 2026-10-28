@@ -40,6 +40,7 @@ import {
 } from './chat';
 import { Header, MonthSummary } from './ChatHeader';
 import { ConfirmCard, Receipt, TextBubble, TypingBubble } from './ChatItems';
+import { MicIcon } from './icons';
 import {
   type MonthSummary as MonthTotals,
   type ShortcutKey,
@@ -57,6 +58,8 @@ import {
 } from './summary';
 import { style } from './styles';
 import { useKeyboardOverlap } from './useKeyboardOverlap';
+import { useVoiceInput } from './useVoiceInput';
+import { MESSAGE_MAX_LENGTH, appendTranscript } from './voice';
 
 // Mensagem do usuário como vai para POST /webhook/messages (e para a fila offline)
 type UserMessage = {
@@ -104,6 +107,23 @@ export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
   const addBotMessage = (text: string) =>
     addItem({ kind: 'text', id: nextItemId('bot'), sender: 'bot', text });
 
+  // Voz: o que é falado entra no campo depois do que já estava escrito ao tocar no microfone
+  const voiceBase = useRef('');
+  const voice = useVoiceInput({
+    onTranscript: (transcript) => setInputValue(appendTranscript(voiceBase.current, transcript)),
+    onError: addBotMessage,
+  });
+  const { cancel: cancelVoice } = voice;
+
+  const handleMicPress = () => {
+    if (voice.listening) {
+      voice.stop();
+      return;
+    }
+    voiceBase.current = inputValue;
+    voice.start();
+  };
+
   // Gastos do mês e de hoje (GET /transactions do dia 1º até hoje). Em erro, mantém os últimos valores.
   const loadSummary = useCallback(async () => {
     const request = ++summaryRequest.current;
@@ -139,8 +159,11 @@ export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
         BackHandler.exitApp();
         return true;
       });
-      return () => subscription.remove();
-    }, [loadSummary, loadUserName]),
+      return () => {
+        subscription.remove();
+        cancelVoice();
+      };
+    }, [loadSummary, loadUserName, cancelVoice]),
   );
 
   // Teclado abriu: a lista encolhe, mantém a última mensagem à vista
@@ -166,6 +189,7 @@ export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
 
     lock();
     Keyboard.dismiss();
+    cancelVoice();
 
     const userMessage: UserMessage = {
       id: Date.now().toString(),
@@ -218,6 +242,7 @@ export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
   // Atalhos: "Recebi um pix" só preenche o campo; os outros respondem com conta feita no app
   const handleShortcut = async (key: ShortcutKey, label: string) => {
     if (key === 'pix') {
+      cancelVoice();
       setInputValue(PIX_PREFILL);
       requestAnimationFrame(() => inputRef.current?.focus());
       return;
@@ -366,18 +391,36 @@ export default function HomePage({ navigation }: TabScreenProps<'HomeTab'>) {
       </ScrollView>
 
       <View style={style.composer}>
-        <View style={style.inputBox}>
+        <View style={[style.inputBox, voice.available && style.inputBoxWithMic]}>
           <TextInput
             ref={inputRef}
             style={style.input}
-            placeholder="Conta pro Jorge…"
+            placeholder={voice.listening ? 'Pode falar…' : 'Conta pro Jorge…'}
             placeholderTextColor={themas.colors.controlOff}
             accessibilityLabel="Mensagem para o Jorge"
             value={inputValue}
             onChangeText={setInputValue}
             multiline
-            maxLength={500}
+            maxLength={MESSAGE_MAX_LENGTH}
           />
+          {voice.available && (
+            <Pressable
+              onPress={handleMicPress}
+              accessibilityRole="button"
+              accessibilityLabel={voice.listening ? 'Parar de ouvir' : 'Falar a mensagem'}
+              hitSlop={6}
+              style={({ pressed }) => [
+                style.micButton,
+                voice.listening && style.micButtonListening,
+                pressed && style.pressed,
+              ]}
+            >
+              <MicIcon
+                size={20}
+                color={voice.listening ? themas.colors.textDark : themas.colors.textMuted}
+              />
+            </Pressable>
+          )}
         </View>
         <Pressable
           onPress={handleSendMessage}
