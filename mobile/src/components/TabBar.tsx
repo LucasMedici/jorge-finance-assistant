@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 18,
     borderRadius: themas.radius.lg,
+    overflow: 'hidden',
   },
   iconPillActive: {
     backgroundColor: themas.colors.secondarySoft,

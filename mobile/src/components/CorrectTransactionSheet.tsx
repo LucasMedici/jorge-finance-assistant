@@ -192,117 +192,120 @@ function CorrectionFields({ transaction, onClose, onSaved, onDeleted }: Correcti
       ? styles.fieldFocused
       : null;
 
+  // Só os campos rolam: com as 12 categorias a folha passa da tela e os botões ficam sempre à vista
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">
-          Corrigir lançamento
-        </Text>
-        <Text style={styles.subtitle}>Ajuste o que o Jorge entendeu.</Text>
-      </View>
+    <View style={styles.body}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.title} accessibilityRole="header">
+            Corrigir lançamento
+          </Text>
+          <Text style={styles.subtitle}>Ajuste o que o Jorge entendeu.</Text>
+        </View>
 
-      <SegmentedControl
-        options={TYPE_OPTIONS}
-        value={form.type}
-        onChange={handleTypeChange}
-        accessibilityLabel="Tipo"
-      />
+        <SegmentedControl
+          options={TYPE_OPTIONS}
+          value={form.type}
+          onChange={handleTypeChange}
+          accessibilityLabel="Tipo"
+        />
 
-      <View style={styles.field}>
-        <Text style={styles.label} nativeID="corrigir-valor">
-          Valor
-        </Text>
-        <View style={[styles.amountBox, amountBorder]}>
-          <Text style={styles.currency}>R$</Text>
+        <View style={styles.field}>
+          <Text style={styles.label} nativeID="corrigir-valor">
+            Valor
+          </Text>
+          <View style={[styles.amountBox, amountBorder]}>
+            <Text style={styles.currency}>R$</Text>
+            <TextInput
+              value={form.amount}
+              onChangeText={handleAmountChange}
+              onFocus={() => setFocusedField('amount')}
+              onBlur={() => setFocusedField(null)}
+              keyboardType="decimal-pad"
+              placeholder="0,00"
+              placeholderTextColor={themas.colors.controlOff}
+              editable={!busy}
+              accessibilityLabel="Valor em reais"
+              accessibilityLabelledBy="corrigir-valor"
+              style={styles.amountInput}
+            />
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Categoria</Text>
+          <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel="Categoria">
+            {getCategories(form.type).map((category) => (
+              <Chip
+                key={category}
+                label={category}
+                selected={category === form.category}
+                onPress={() => {
+                  if (!busy) updateForm({ category });
+                }}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label} nativeID="corrigir-descricao">
+            Descrição
+          </Text>
           <TextInput
-            value={form.amount}
-            onChangeText={handleAmountChange}
-            onFocus={() => setFocusedField('amount')}
+            value={form.description}
+            onChangeText={(description) => updateForm({ description })}
+            onFocus={() => setFocusedField('description')}
             onBlur={() => setFocusedField(null)}
-            keyboardType="decimal-pad"
-            placeholder="0,00"
+            placeholder="Ex.: compra no mercado"
             placeholderTextColor={themas.colors.controlOff}
+            maxLength={500}
             editable={!busy}
-            accessibilityLabel="Valor em reais"
-            accessibilityLabelledBy="corrigir-valor"
-            style={styles.amountInput}
+            accessibilityLabel="Descrição"
+            accessibilityLabelledBy="corrigir-descricao"
+            style={[styles.textInput, focusedField === 'description' && styles.fieldFocused]}
           />
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Categoria</Text>
-        <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel="Categoria">
-          {getCategories(form.type).map((category) => (
-            <Chip
-              key={category}
-              label={category}
-              selected={category === form.category}
-              onPress={() => {
-                if (!busy) updateForm({ category });
-              }}
-            />
-          ))}
-        </View>
-      </View>
+        <Pressable
+          onPress={() => {
+            if (busy) return;
+            Keyboard.dismiss();
+            setShowDatePicker(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Data: ${dateLabel}. Alterar data`}
+          style={({ pressed }) => [styles.dateRow, pressed && styles.pressed]}
+        >
+          <CalendarIcon size={20} color={themas.colors.primary} />
+          <View style={styles.dateText}>
+            <Text style={styles.dateCaption}>Data</Text>
+            <Text style={styles.dateValue}>{dateLabel}</Text>
+          </View>
+          <ChevronRightIcon size={18} color={themas.colors.textMuted} />
+        </Pressable>
+        {showDatePicker && (
+          <DateTimePicker
+            value={parseISO(form.date)}
+            mode="date"
+            display="default"
+            maximumDate={new Date()}
+            onChange={handleDateChange}
+          />
+        )}
 
-      <View style={styles.field}>
-        <Text style={styles.label} nativeID="corrigir-descricao">
-          Descrição
-        </Text>
-        <TextInput
-          value={form.description}
-          onChangeText={(description) => updateForm({ description })}
-          onFocus={() => setFocusedField('description')}
-          onBlur={() => setFocusedField(null)}
-          placeholder="Ex.: compra no mercado"
-          placeholderTextColor={themas.colors.controlOff}
-          maxLength={500}
-          editable={!busy}
-          accessibilityLabel="Descrição"
-          accessibilityLabelledBy="corrigir-descricao"
-          style={[styles.textInput, focusedField === 'description' && styles.fieldFocused]}
-        />
-      </View>
-
-      <Pressable
-        onPress={() => {
-          if (busy) return;
-          Keyboard.dismiss();
-          setShowDatePicker(true);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={`Data: ${dateLabel}. Alterar data`}
-        style={({ pressed }) => [styles.dateRow, pressed && styles.pressed]}
-      >
-        <CalendarIcon size={20} color={themas.colors.primary} />
-        <View style={styles.dateText}>
-          <Text style={styles.dateCaption}>Data</Text>
-          <Text style={styles.dateValue}>{dateLabel}</Text>
-        </View>
-        <ChevronRightIcon size={18} color={themas.colors.textMuted} />
-      </Pressable>
-      {showDatePicker && (
-        <DateTimePicker
-          value={parseISO(form.date)}
-          mode="date"
-          display="default"
-          maximumDate={new Date()}
-          onChange={handleDateChange}
-        />
-      )}
-
-      {error && (
-        <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
-          <AlertIcon size={18} color={themas.colors.error} />
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
+        {error && (
+          <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <AlertIcon size={18} color={themas.colors.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+      </ScrollView>
 
       <View style={styles.actions}>
         <PrimaryButton
@@ -319,7 +322,7 @@ function CorrectionFields({ transaction, onClose, onSaved, onDeleted }: Correcti
           disabled={busy}
         />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -328,6 +331,9 @@ const FIELD_BORDER = 2;
 const styles = StyleSheet.create({
   // Deixa a folha encolher e a lista rolar quando o conteúdo passa da altura máxima
   sheetContent: {
+    flexShrink: 1,
+  },
+  body: {
     flexShrink: 1,
   },
   scroll: {
@@ -456,6 +462,6 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 4,
-    paddingTop: 4,
+    paddingTop: 18,
   },
 });
