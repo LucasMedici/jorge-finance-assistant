@@ -1,9 +1,10 @@
 // Posição da imagem do Jorge dentro do círculo do avatar (função pura, testada em __tests__).
-// A imagem inteira ocupa ~89% do diâmetro, um pouco à direita e para baixo do centro,
-// para a mão acenando aparecer inteira (medidas do canvas: 64 -> 57/3/7, 132 -> 118/7/14).
-const IMAGE_RATIO = 0.893;
-const LEFT_RATIO = 0.053;
-const TOP_RATIO = 0.106;
+// A arte do avatar (assets/v2/jorge_avatar.png) é um busto com o corpo cortado reto embaixo: a imagem fica
+// maior que o círculo (115%), um pouco para a esquerda, para o corte cair fora do círculo e a mão acenando
+// e a antena aparecerem inteiras.
+const IMAGE_RATIO = 1.15;
+const LEFT_RATIO = -0.1;
+const TOP_RATIO = 0.08;
 
 export type AvatarImageLayout = {
   width: number;
