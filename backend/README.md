@@ -4,6 +4,9 @@ REST API of **Jorge**, a personal finance assistant: the app sends a message in 
 ("gastei 50 reais no mercado"), OpenAI (`gpt-4o-mini`) extracts amount, type and category, and the result is stored
 as a transaction in Postgres. Built with Node.js, Express 5, TypeScript, Prisma and Zod.
 
+This is the **v2** API: on top of v1 it has a fixed category list, corrections (`PATCH`/`DELETE
+/transactions/:id`) and the monthly spending goal (`monthlyGoal`), still with one OpenAI call per message.
+
 This folder is only the API. The app lives in [`../mobile`](../mobile); the full project overview, features and
 API reference are in the [root README](../README.md).
 

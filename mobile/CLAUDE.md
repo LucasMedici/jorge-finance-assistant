@@ -52,7 +52,8 @@ src/components/               componentes base do v2 (barrel index.ts): JorgeAva
 src/services/api.ts           axios: injeta o Bearer token; em 401 limpa o token e derruba a sessão
 src/services/transactions.ts  GET/PATCH/DELETE de transações;  src/services/user.ts  perfil e meta mensal
 src/hooks/                    useMonthlyGoal (meta compartilhada entre telas, sem Provider), useAverageMonthlySpending
-src/assets/                   imagens do Jorge e ícone/splash (src/assets/app-icon)
+src/assets/v2/                artes do Jorge: avatar (JorgeAvatar) e corpo inteiro (splash)
+src/assets/app-icon/v2/       ícone do app: loja/legado, camadas do adaptativo e monocromático
 ```
 
 Pontos importantes:
