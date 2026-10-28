@@ -48,6 +48,7 @@ import {
   getEntryCategory,
   getEntryDate,
   getEntryTitle,
+  hasDescription,
   getGoalForecast,
   getMonthPace,
   getPercentChange,
@@ -392,9 +393,11 @@ export default function ReportsPage({ navigation }: ReportsStackScreenProps<'Rep
                         <Text style={style.topName} numberOfLines={1}>
                           {getEntryTitle(entry)}
                         </Text>
-                        <Text style={style.topCategory} numberOfLines={1}>
-                          {getEntryCategory(entry)}
-                        </Text>
+                        {hasDescription(entry) && (
+                          <Text style={style.topCategory} numberOfLines={1}>
+                            {getEntryCategory(entry)}
+                          </Text>
+                        )}
                       </View>
                       <Text style={style.topAmount}>
                         {`− ${formatCurrency(getEntryAmount(entry))}`}

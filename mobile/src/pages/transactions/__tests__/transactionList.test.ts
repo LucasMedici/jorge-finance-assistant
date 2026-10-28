@@ -115,7 +115,10 @@ describe('textos', () => {
     expect(formatSignedAmount(lunch)).toBe('− R$ 32,90');
     expect(formatSignedAmount(tx('receita', 100, 'Freela', at(10, 1)))).toBe('+ R$ 100,00');
     expect(formatSignedAmount(tx('outro', 5, null, at(10, 1)))).toBe('R$ 5,00');
-    expect(formatEntryCaption(lunch)).toBe('Comer fora, 12:40');
+    expect(formatEntryCaption(lunch)).toBe('12:40');
+    expect(formatEntryCaption(tx('gasto', 32.9, 'comer fora', at(10, 23, 12, 40), 'Almoço'))).toBe(
+      'Comer fora, 12:40',
+    );
   });
 
   it('meses para escolher', () => {

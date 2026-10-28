@@ -11,6 +11,7 @@ import {
   getEntryCategory,
   getEntryDate,
   getEntryType,
+  hasDescription,
   isExpense,
   sortByDateDesc,
   sumExpenses,
@@ -108,8 +109,11 @@ export function formatSignedAmount(entry: Transaction): string {
 }
 
 /** Linha de baixo do item: "Comer fora, 12:40". */
-export const formatEntryCaption = (entry: Transaction) =>
-  `${getEntryCategory(entry)}, ${format(getEntryDate(entry), 'HH:mm')}`;
+// Sem descrição o título já é a categoria: a legenda fica só com a hora
+export const formatEntryCaption = (entry: Transaction) => {
+  const time = format(getEntryDate(entry), 'HH:mm');
+  return hasDescription(entry) ? `${getEntryCategory(entry)}, ${time}` : time;
+};
 
 /** Meses que dá para escolher: do atual até `count - 1` meses atrás (1º dia de cada). */
 export function getRecentMonths(today: Date, count = 12): Date[] {

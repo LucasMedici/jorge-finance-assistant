@@ -22,6 +22,7 @@ import {
   getEntryCategory,
   getEntryDate,
   getEntryTitle,
+  hasDescription,
   getHistoryRange,
   isExpense,
   sortByDateDesc,
@@ -227,7 +228,14 @@ export default function CategoryDetailPage({
               )}
               {list.map((entry, index) => {
                 const date = format(getEntryDate(entry), "d 'de' MMMM", { locale: ptBR });
-                const subtitle = isGroup ? `${getEntryCategory(entry)}, ${date}` : date;
+                // Sem descrição, o título seria o próprio nome da categoria em todas as linhas: usa a data
+                const titleIsDate = !isGroup && !hasDescription(entry);
+                const title = titleIsDate ? date : getEntryTitle(entry);
+                const subtitle = titleIsDate
+                  ? format(getEntryDate(entry), 'HH:mm')
+                  : isGroup
+                    ? `${getEntryCategory(entry)}, ${date}`
+                    : date;
                 return (
                   <Pressable
                     key={entry.id}
@@ -238,12 +246,12 @@ export default function CategoryDetailPage({
                       pressed && style.pressed,
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel={`${getEntryTitle(entry)}, ${subtitle}, ${formatCurrency(getEntryAmount(entry))}`}
+                    accessibilityLabel={`${title}, ${subtitle}, ${formatCurrency(getEntryAmount(entry))}`}
                     accessibilityHint="Abre a correção do lançamento"
                   >
                     <View style={style.itemInfo}>
                       <Text style={style.itemTitle} numberOfLines={1}>
-                        {getEntryTitle(entry)}
+                        {title}
                       </Text>
                       <Text style={style.itemSubtitle} numberOfLines={1}>
                         {subtitle}

@@ -33,6 +33,10 @@ export const getEntryCategory = (entry: Pick<Transaction, 'type' | 'category'>):
 /** Data/hora no fuso local. */
 export const getEntryDate = (entry: Pick<Transaction, 'createdAt'>) => new Date(entry.createdAt);
 
+/** O lançamento tem descrição própria (a maioria não tem: o título vira a categoria). */
+export const hasDescription = (entry: Pick<Transaction, 'description'>) =>
+  Boolean(entry.description?.trim());
+
 /** Descrição, ou a categoria quando não há descrição. */
 export const getEntryTitle = (entry: Pick<Transaction, 'type' | 'category' | 'description'>) =>
   entry.description?.trim() || getEntryCategory(entry);
