@@ -1,7 +1,8 @@
 <div align="center">
-  <img width="180" height="180" alt="Jorge acenando" src="./mobile/src/assets/v2/jorge_corpo_inteiro.png" />
-
-  # Jorge — Assistente Financeiro
+  <h1>
+    <img height="170" alt="Jorge acenando" src="./mobile/doc-images/v2/jorge_readme.png" /><br />
+    Jorge — Assistente Financeiro
+  </h1>
 
   **Seu assistente financeiro pessoal: é só contar pro Jorge o que você gastou.**
 
