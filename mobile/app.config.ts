@@ -22,6 +22,16 @@ export default {
         backgroundColor: "#31266C",
       },
     },
+    plugins: [
+      // Entrada por voz no chat: permissão de microfone e reconhecimento de voz do próprio celular
+      [
+        "expo-speech-recognition",
+        {
+          microphonePermission: "O Jorge usa o microfone para você falar seus gastos.",
+          speechRecognitionPermission: "O Jorge transcreve o que você fala para registrar seus gastos.",
+        },
+      ],
+    ],
     extra: {
       API_URL: process.env.API_URL,
       eas: {

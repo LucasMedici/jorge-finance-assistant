@@ -55,6 +55,16 @@ export function TagIcon({ strokeWidth = 2.2, ...props }: IconProps) {
   );
 }
 
+// Microfone do campo de mensagem (entrada por voz)
+export function MicIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <Path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
+      <Path d="M19 11a7 7 0 0 1-14 0M12 18v3" />
+    </StrokeIcon>
+  );
+}
+
 const CART_CATEGORIES = new Set(['mercado', 'mercadinho', 'compras']);
 
 /** Ícone do chip de categoria no cartão Confirmar. */

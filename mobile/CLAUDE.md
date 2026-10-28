@@ -26,7 +26,8 @@ Use **npm** (`package-lock.json` é o lockfile versionado).
 ## Stack
 
 Expo SDK 54 · React Native 0.81 (New Architecture) · React 19 · TypeScript (strict) · React Navigation 7
-(native-stack + bottom-tabs) · axios · AsyncStorage · NetInfo · react-native-svg (gráficos) · date-fns · jwt-decode.
+(native-stack + bottom-tabs) · axios · AsyncStorage · NetInfo · react-native-svg (gráficos) · date-fns · jwt-decode ·
+expo-speech-recognition (voz no chat; módulo nativo — no Expo Go o microfone não aparece).
 
 ## Configuração / API_URL
 
@@ -66,6 +67,8 @@ Pontos importantes:
   `CorrectTransactionSheet` (PATCH/DELETE pelo `id` que o webhook devolve). O `error` do 400 vira mensagem do Jorge.
   Atalhos ("Quanto gastei hoje?", "Resumo da semana") são calculados no app, sem chamar a IA. O teclado é tratado
   por `useKeyboardOverlap` (o `KeyboardAvoidingView` deixa sobra no Android edge-to-edge).
+  Microfone no campo (`useVoiceInput`): reconhecimento `pt-BR` do próprio celular, sem custo de API; o texto só
+  preenche o campo (depois do que já estava escrito) e o envio continua pelo botão. Erros viram mensagem do Jorge.
 - **Fila offline** (`global/offlineQueue.ts`, chave `offlineQueue`): sem conexão a mensagem é guardada (com
   `userPhone`) e reenviada depois — só os itens do usuário logado, sem execução em paralelo. Mensagens rejeitadas
   pelo backend (4xx, exceto 401/408/429 e `OPENAI_*`) são descartadas; falhas transitórias mantêm o item e param

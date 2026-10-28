@@ -412,18 +412,36 @@ export const style = StyleSheet.create({
   inputBox: {
     flex: 1,
     minHeight: 48,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     paddingHorizontal: 18,
     borderRadius: 24,
     backgroundColor: colors.white,
   },
+  inputBoxWithMic: {
+    paddingRight: 6,
+  },
   input: {
+    flex: 1,
     maxHeight: 120,
     paddingVertical: 12,
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 20,
     color: colors.textDark,
+  },
+  // Microfone dentro do campo; ouvindo = verde com ícone escuro
+  micButton: {
+    width: 36,
+    height: 36,
+    marginVertical: 6,
+    marginLeft: 4,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  micButtonListening: {
+    backgroundColor: colors.secondary,
   },
   sendButton: {
     width: 48,
