@@ -1,20 +1,20 @@
 import { getAvatarImageLayout } from '../jorgeAvatarLayout';
 
 describe('getAvatarImageLayout', () => {
-  it('64 (chat) bate com o canvas', () => {
-    expect(getAvatarImageLayout(64)).toEqual({ width: 57, height: 57, left: 3, top: 7 });
+  it('64 (chat e perfil)', () => {
+    expect(getAvatarImageLayout(64)).toEqual({ width: 74, height: 74, left: -6, top: 5 });
   });
 
-  it('132 (login) bate com o canvas', () => {
-    expect(getAvatarImageLayout(132)).toEqual({ width: 118, height: 118, left: 7, top: 14 });
+  it('132 (login)', () => {
+    expect(getAvatarImageLayout(132)).toEqual({ width: 152, height: 152, left: -13, top: 11 });
   });
 
-  it('a imagem fica dentro do círculo pela esquerda e por cima', () => {
+  it('a imagem passa da borda de baixo do círculo (o corte reto do corpo fica escondido)', () => {
     for (const size of [40, 64, 96, 132, 200]) {
-      const { width, left, top } = getAvatarImageLayout(size);
-      expect(width).toBeLessThan(size);
-      expect(left).toBeGreaterThan(0);
-      expect(top).toBeGreaterThan(left);
+      const { height, left, top } = getAvatarImageLayout(size);
+      expect(top + height).toBeGreaterThan(size);
+      expect(left).toBeLessThan(0);
+      expect(top).toBeGreaterThan(0);
     }
   });
 });

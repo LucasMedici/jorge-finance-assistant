@@ -1,5 +1,5 @@
 import { Image, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
-import jorgeAcenando from '../assets/jorge_acenando.png';
+import jorgeAvatar from '../assets/v2/jorge_avatar.png';
 import { themas } from '../global/themes';
 import { getAvatarImageLayout } from './jorgeAvatarLayout';
 
@@ -11,7 +11,7 @@ type JorgeAvatarProps = {
   accessibilityLabel?: string | null;
 };
 
-// Jorge acenando, inteiro, dentro de um círculo roxo. Estático (sem animação).
+// Busto do Jorge acenando dentro de um círculo roxo. Estático (sem animação).
 export default function JorgeAvatar({
   size = 64,
   style,
@@ -29,7 +29,7 @@ export default function JorgeAvatar({
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
     >
       <Image
-        source={jorgeAcenando}
+        source={jorgeAvatar}
         resizeMode="contain"
         fadeDuration={0}
         style={[styles.image, getAvatarImageLayout(size)]}
