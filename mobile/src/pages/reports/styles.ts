@@ -1,332 +1,312 @@
 import { StyleSheet } from 'react-native';
-import { themas } from '../../global/themes';
 import { fonts } from '../../global/fonts';
+import { themas } from '../../global/themes';
+
+// Medidas do canvas "Relatórios v2 — Painel do mês" (390 de largura, margens de 24)
+const MUTED = 'rgba(255, 255, 255, 0.75)';
+const CAPTION = themas.colors.onPrimaryMuted;
 
 export const style = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: themas.colors.primary,
-    paddingTop: 10,
   },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  scrollContent: {
+    paddingBottom: 24,
   },
-
-  headerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    color: '#FFFFFF',
+  pressed: {
+    opacity: 0.7,
   },
-
-  headerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginTop: 2,
-  },
-
-  datePickerContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-
-  datePickerButton: {
-    flex: 1,
-    backgroundColor: 'rgba(141, 198, 62, 0.15)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(141, 198, 62, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  datePickerText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-
-  summaryContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 15,
-    gap: 10,
-  },
-
-  summaryCard: {
-    flex: 1,
-    backgroundColor: 'rgba(141, 198, 62, 0.15)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: themas.colors.secondary,
-  },
-
-  summaryLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 5,
-  },
-
-  summaryAmount: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: themas.colors.secondary,
-  },
-
-  summaryCardNegative: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderLeftColor: 'rgba(255, 255, 255, 0.4)',
-  },
-
-  summaryAmountNegative: {
-    color: '#FFFFFF',
-  },
-
-  chartContainer: {
-    marginHorizontal: 15,
-    marginVertical: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-
-  chartScrollView: {
-    overflow: 'hidden',
-    borderRadius: 8,
-  },
-
-  chartScrollContainer: {
-    overflow: 'hidden',
-    borderRadius: 8,
-    marginHorizontal: -12,
-    marginVertical: -12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-
-  chartTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginBottom: 10,
-  },
-
-  lastEntriesContainer: {
-    marginHorizontal: 15,
-    marginVertical: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-
-  lastEntriesTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-
-  lastEntryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: themas.colors.secondary,
-  },
-
-  lastEntryItemExpense: {
-    borderLeftColor: 'rgba(255, 255, 255, 0.4)',
-  },
-
-  lastEntryItemOther: {
-    borderLeftColor: 'rgba(255, 255, 255, 0.15)',
-  },
-
-  lastEntryInfo: {
-    flex: 1,
-  },
-
-  lastEntryText: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: '#FFFFFF',
-  },
-
-  lastEntryDate: {
-    fontFamily: fonts.regular,
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.5)',
-    marginTop: 2,
-  },
-
-  lastEntryAmount: {
+  strong: {
     fontFamily: fonts.semibold,
-    fontSize: 12,
-    color: '#FFFFFF',
   },
 
-  lastEntryAmountIncome: {
+  // Cabeçalho: título, período e mês
+  header: {
+    gap: 16,
+    paddingTop: 20,
+    paddingHorizontal: 24,
+  },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 26,
+    lineHeight: 32,
+    color: themas.colors.white,
+  },
+  periodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  periodArrow: {
+    width: themas.minTouchSize,
+    height: themas.minTouchSize,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodTitle: {
+    flexShrink: 1,
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: themas.colors.white,
+    textAlign: 'center',
+  },
+
+  loading: {
+    paddingVertical: 80,
+    alignItems: 'center',
+  },
+  errorBox: {
+    alignItems: 'flex-start',
+    gap: 4,
+    paddingTop: 24,
+    paddingHorizontal: 24,
+  },
+  errorText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: MUTED,
+  },
+
+  // Seções
+  section: {
+    paddingHorizontal: 24,
+  },
+  sectionDivider: {
+    borderTopWidth: 1,
+    borderTopColor: themas.colors.onPrimaryDivider,
+  },
+  sectionHeader: {
+    gap: 4,
+  },
+  sectionTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 18,
+    lineHeight: 24,
+    color: themas.colors.white,
+  },
+  sectionText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: MUTED,
+  },
+
+  // Total e meta
+  totalSection: {
+    gap: 14,
+    paddingTop: 12,
+    paddingBottom: 28,
+  },
+  totalHeader: {
+    gap: 2,
+  },
+  totalLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: MUTED,
+  },
+  totalValue: {
+    fontFamily: fonts.bold,
+    fontSize: 42,
+    lineHeight: 48,
+    letterSpacing: -1.26,
+    color: themas.colors.white,
+  },
+  totalComparison: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: themas.colors.white,
+  },
+  link: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: 36,
+  },
+  linkText: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    lineHeight: 20,
     color: themas.colors.secondary,
   },
-
-  lastEntryAmountOther: {
-    color: 'rgba(255, 255, 255, 0.5)',
+  goalInvite: {
+    gap: 4,
   },
-
-  lastEntryEmpty: {
+  goalInviteText: {
     fontFamily: fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
-    textAlign: 'center',
-    paddingVertical: 10,
+    fontSize: 14,
+    lineHeight: 21,
+    color: MUTED,
   },
 
-  legendContainer: {
-    marginHorizontal: 15,
-    marginVertical: 10,
-    gap: 8,
+  // Ritmo do mês
+  paceSection: {
+    gap: 14,
+    paddingVertical: 28,
   },
-
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 16,
+    rowGap: 6,
+  },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 8,
+    gap: 6,
   },
-
-  legendBox: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-    backgroundColor: themas.colors.secondary,
-  },
-
   legendText: {
     fontFamily: fonts.regular,
-    fontSize: 12,
-    color: '#FFFFFF',
-    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
-
-  // Antigos que ainda podem estar em uso
-  chartHeader: {
+  warning: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 10,
-    marginBottom: 10,
-  },
-
-  categoryLegend: {
-    marginTop: 10,
-    gap: 8,
-  },
-
-  legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-
-  legendTextContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  legendCategory: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: '#FFFFFF',
-  },
-
-  legendAmount: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: themas.colors.secondary,
-  },
-
-  monthLegend: {
-    marginTop: 10,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-
-  monthItem: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-  },
-
-  monthName: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 4,
-  },
-
-  monthAmount: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: themas.colors.secondary,
-  },
-
-  totalContainer: {
-    marginHorizontal: 15,
-    marginVertical: 15,
-    backgroundColor: 'rgba(141, 198, 62, 0.15)',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: themas.radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(141, 198, 62, 0.3)',
-    alignItems: 'center',
+    borderColor: 'rgba(242, 184, 75, 0.35)',
+    backgroundColor: 'rgba(242, 184, 75, 0.12)',
+  },
+  warningIcon: {
+    marginTop: 2,
+  },
+  warningText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: themas.colors.white,
+  },
+  warningStrong: {
+    fontFamily: fonts.semibold,
   },
 
-  totalLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
+  // Para onde foi o dinheiro
+  categoriesSection: {
+    gap: 18,
+    paddingVertical: 28,
+  },
+  categoryRow: {
+    gap: 8,
+  },
+  categoryTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  categoryName: {
+    flexShrink: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 20,
+    color: themas.colors.white,
+  },
+  categoryValueBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  categoryValue: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 20,
+    color: themas.colors.white,
+  },
+  barTrack: {
+    height: 10,
+    borderRadius: 5,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  barFill: {
+    height: 10,
+    borderRadius: 5,
+  },
+  categoryCaption: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: CAPTION,
+  },
+  categoryCaptionFirst: {
+    color: themas.colors.white,
+  },
+
+  // Maiores gastos
+  topSection: {
+    gap: 6,
+    paddingTop: 28,
+    paddingBottom: 20,
+  },
+  topTitle: {
     marginBottom: 8,
   },
-
-  totalAmount: {
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    minHeight: 60,
+  },
+  dateBox: {
+    width: 44,
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderRadius: themas.radius.sm,
+    backgroundColor: 'rgba(0, 0, 0, 0.16)',
+  },
+  dateDay: {
     fontFamily: fonts.bold,
-    fontSize: 28,
+    fontSize: 16,
+    lineHeight: 18,
+    color: themas.colors.white,
+  },
+  dateMonth: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    lineHeight: 14,
+    color: CAPTION,
+  },
+  topInfo: {
+    flex: 1,
+  },
+  topName: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    lineHeight: 20,
+    color: themas.colors.white,
+  },
+  topCategory: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: CAPTION,
+  },
+  topAmount: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    lineHeight: 20,
+    color: themas.colors.white,
+  },
+  seeAll: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: themas.minTouchSize,
+  },
+  seeAllText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    lineHeight: 20,
     color: themas.colors.secondary,
   },
 });

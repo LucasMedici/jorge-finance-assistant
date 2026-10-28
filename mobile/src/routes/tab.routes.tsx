@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ChartIcon, ChatIcon, TabBar } from '../components';
 
 import HomePage from '../pages/home';
-import ReportsPage from '../pages/reports';
+import ReportsRoutes from './reports.routes';
 import type { TabParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -21,7 +21,7 @@ export default function TabRoutes() {
 
       <Tab.Screen
         name="ReportsTab"
-        component={ReportsPage}
+        component={ReportsRoutes}
         options={{
           tabBarLabel: 'Relatórios',
           tabBarIcon: ({ color, size }) => <ChartIcon size={size} color={color} />,
