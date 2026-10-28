@@ -20,7 +20,14 @@ npm start              # Expo dev server (Expo Go / dev client)
 `API_URL` is read by `app.config.ts` and exposed in `extra.API_URL`. On a physical phone use your machine's
 LAN IP, not `localhost`; on the Android emulator use `http://10.0.2.2:3065`.
 
-Type check: `npx tsc --noEmit`.
+Other commands:
+
+```bash
+npm run android        # open on Android
+npm test               # Jest (jest-expo): reports math, offline queue, token, goal and form helpers
+npm run lint           # ESLint (eslint-config-expo + prettier)
+npx tsc --noEmit       # type check
+```
 
 ## Building the APK
 
@@ -38,24 +45,35 @@ app.config.ts           Expo config (the only one; there is no app.json)
 src/
   routes/               stack (Login, Register, MainApp, Profile) and tabs (Chat, Reports), with navigation types
   pages/<screen>/       index.tsx + styles.ts for login, register, home (chat), reports, profile
+  components/           v2 building blocks (JorgeAvatar, Sheet, Chip, SegmentedControl, PrimaryButton, GoalBar,
+                        TabBar, icons, ...) and the sheets to fix a transaction and set the monthly goal
+  hooks/                monthly goal and average monthly spending
   context/              AuthContext (session from the saved JWT), ConectionContext (network status + offline queue)
-  global/               theme, fonts, token check, offline queue
-  services/api.ts       axios instance that sends the saved token as `Authorization: Bearer <token>`
+  global/               theme, fonts, formatCurrency, categories, monthly goal helpers, token check, offline queue
+  services/             api.ts (axios with the Bearer token; a 401 logs out), transactions.ts, user.ts
   assets/               Jorge images and app icon
-doc-images/             screenshots used in the READMEs
+doc-images/             screenshots used in the READMEs; doc-images/v2/ has the reference screens of the redesign
 ```
+
+Pure logic lives outside the components, with Jest tests in `__tests__/` next to it.
 
 ## How it behaves
 
 - **Session:** the JWT is saved in AsyncStorage and restored on launch if it has not expired. There is no
   token refresh: when the token expires (or the API answers 401) you are sent back to the login screen.
-- **Chat:** each message is sent to `POST /webhook/messages`; the API turns it into a transaction.
+- **Chat:** each message is sent to `POST /webhook/messages`; the API turns it into a transaction and the chat
+  shows what was recorded ("Anotado ✅ Gasto de R$ 50,00 …") or the API's error message.
 - **Offline queue:** messages sent without a connection are queued and sent when the connection comes back
-  or when the same user logs in again. Messages from another account stay queued.
+  or when the same user logs in again. Messages from another account stay queued. Messages the API rejects
+  (e.g. "not a transaction") are dropped; temporary failures keep the item and retry later. Resending is safe
+  because the API is idempotent by message `id`.
 - **Reports:** expenses by category, income, balance and latest transactions for a date range
-  (default: first day of the month → today).
+  (default: first day of the month → today). Dates are sent as `YYYY-MM-DD` in local time.
 
 ## Screenshots
+
+These are v1 screenshots; login, register and profile already follow the v2 design, whose reference screens are
+in [`doc-images/v2/`](./doc-images/v2).
 
 | Login | Chat | Reports |
 | --- | --- | --- |
