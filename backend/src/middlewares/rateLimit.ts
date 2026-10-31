@@ -7,6 +7,8 @@ export interface RateLimitOptions {
   max: number;
   /** Mensagem do 429. */
   message?: string;
+  /** Chave de contagem; padrão: IP do cliente. */
+  keyGenerator?: (req: Request) => string;
   /** Desativado por padrão quando NODE_ENV === 'test' (avaliado na criação). */
   enabled?: boolean;
   /** Relógio injetável (testes). */
@@ -24,13 +26,14 @@ export type RateLimitMiddleware = ((req: Request, res: Response, next: NextFunct
 };
 
 /**
- * Rate limit simples em memória, janela fixa por IP.
+ * Rate limit simples em memória, janela fixa por IP (ou pela chave de `keyGenerator`).
  * Suficiente para uma única instância (o caso da Railway hoje); com várias réplicas cada uma conta separado.
  */
 export function createRateLimiter({
   windowMs,
   max,
   message = 'Muitas tentativas. Tente novamente em alguns minutos.',
+  keyGenerator = (req) => req.ip ?? req.socket.remoteAddress ?? 'unknown',
   enabled = process.env.NODE_ENV !== 'test',
   now = Date.now,
 }: RateLimitOptions): RateLimitMiddleware {
@@ -52,7 +55,7 @@ export function createRateLimiter({
     const current = now();
     sweep(current);
 
-    const key = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    const key = keyGenerator(req);
     let entry = hits.get(key);
     if (!entry || entry.resetAt <= current) {
       entry = { count: 0, resetAt: current + windowMs };

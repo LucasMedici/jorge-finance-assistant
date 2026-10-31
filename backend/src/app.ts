@@ -21,7 +21,16 @@ app.get('/serverstatus', (req, res) => {
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10 });
 app.post(['/auth/login', '/auth/signup'], authRateLimit);
 
-app.use('/webhook', authMiddleware, webhookRoutes);
+// 30 mensagens por usuário a cada 15 min no chat: cada uma é uma chamada paga à OpenAI. Conta pelo usuário do
+// token (depois do authMiddleware), não pelo IP. O app trata o 429 como falha temporária e a fila offline reenvia depois.
+const webhookRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Muitas mensagens em pouco tempo. Tente novamente em alguns minutos.',
+  keyGenerator: (req) => req.user?.id ?? req.ip ?? 'unknown',
+});
+
+app.use('/webhook', authMiddleware, webhookRateLimit, webhookRoutes);
 app.use('/auth', authRouter);
 app.use('/user', authMiddleware, userRouter);
 app.use('/transactions', authMiddleware, transactionRouter);

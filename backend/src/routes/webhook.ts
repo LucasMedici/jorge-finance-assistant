@@ -118,6 +118,8 @@ function responseFromTransaction(tx: transaction) {
  *                   type: string
  *                   enum: [EMPTY_MESSAGE, MESSAGE_TOO_LONG, NO_TRANSACTION, OPENAI_NO_RESPONSE, OPENAI_REFUSAL, OPENAI_API_ERROR, INVALID_JSON_RESPONSE]
  *                   example: "NO_TRANSACTION"
+ *       429:
+ *         description: Limite de 30 mensagens por usuário a cada 15 min (`{ error }`, header `Retry-After` em segundos)
  *       500:
  *         description: Erro interno do servidor (`{ error }`)
  */

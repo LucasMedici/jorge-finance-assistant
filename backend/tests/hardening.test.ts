@@ -70,6 +70,19 @@ describe('createRateLimiter', () => {
     // 2.2.2.2 expirou e foi removido; só sobra o IP que acabou de voltar
     expect(limiter.size()).toBe(1);
   });
+
+  it('conta pela chave do keyGenerator em vez do IP (limite por usuário no webhook)', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const app = appWith(
+      createRateLimiter({ windowMs: 60_000, max: 1, keyGenerator: (req) => String(req.headers['x-user']) })
+    );
+
+    // mesmo usuário em IPs diferentes: bloqueia
+    expect((await request(app).post('/auth/login').set('X-User', 'a').set('X-Forwarded-For', '1.1.1.1')).status).toBe(401);
+    expect((await request(app).post('/auth/login').set('X-User', 'a').set('X-Forwarded-For', '2.2.2.2')).status).toBe(429);
+    // outro usuário no mesmo IP: passa
+    expect((await request(app).post('/auth/login').set('X-User', 'b').set('X-Forwarded-For', '1.1.1.1')).status).toBe(401);
+  });
 });
 
 describe('validateEnv', () => {
