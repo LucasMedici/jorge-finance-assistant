@@ -9,3 +9,6 @@ node_modules/
 
 # Worktrees temporários dos agentes do Claude Code
 .claude/worktrees/
+
+# Instruções do Claude Code: ficam só na máquina local
+CLAUDE.md
